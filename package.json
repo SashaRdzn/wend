@@ -1,0 +1,17 @@
+{
+  "name": "wedding",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n b,f \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:lan": "concurrently -k -n b,f \"npm run dev:lan --prefix backend\" \"npm run dev:lan --prefix frontend\"",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix backend",
+    "start:prod": "npm run build --prefix frontend && cross-env NODE_ENV=production npm run start --prefix backend",
+    "preview": "npm run preview --prefix frontend",
+    "preview:lan": "npm run preview:lan --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3"
+  }
+}
