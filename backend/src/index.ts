@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 const PORT = Number(process.env.PORT) || 4000
-const HOST = process.env.HOST || '127.0.0.1'
+const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1')
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin'
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
