@@ -26,12 +26,10 @@ export function CurtainReveal({ children }: { children: React.ReactNode }) {
         aria-hidden
       >
         <div
-          className="curtain-panel curtain-left h-full w-1/2"
-          style={{ background: 'var(--color-ink, #1b1230)' }}
+          className="curtain-panel curtain-left h-full w-1/2 bg-moss"
         />
         <div
-          className="curtain-panel curtain-right h-full w-1/2"
-          style={{ background: 'var(--color-ink, #1b1230)' }}
+          className="curtain-panel curtain-right h-full w-1/2 bg-moss"
         />
       </div>
       {children}

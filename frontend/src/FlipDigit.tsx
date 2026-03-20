@@ -30,12 +30,12 @@ export function FlipDigit({ value }: Props) {
           onTransitionEnd={handleTransitionEnd}
         >
           <div className="flip-face flip-face-front">
-            <span className="flip-digit font-display font-semibold tabular-nums text-champagne">
+            <span className="flip-digit font-display font-semibold tabular-nums text-moss">
               {d}
             </span>
           </div>
           <div className="flip-face flip-face-back">
-            <span className="flip-digit font-display font-semibold tabular-nums text-champagne">
+            <span className="flip-digit font-display font-semibold tabular-nums text-moss">
               {n}
             </span>
           </div>

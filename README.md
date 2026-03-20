@@ -49,14 +49,19 @@ npm install --prefix backend
 
 ## Деплой
 
-1. Сборка фронта и запуск одного сервера (фронт + API):
+1. **Один процесс (фронт + API)** — удобно для VPS:
 
    ```bash
+   npm install
+   npm install --prefix frontend
+   npm install --prefix backend
    npm run start:prod
    ```
 
-   Нужны зависимости в `frontend` и `backend`. Бэкенд поднимается на `PORT` (или 4000), раздаёт статику из `frontend/dist` и обрабатывает `/api`. Откройте в браузере `http://<хост>:4000`.
+   Скрипт собирает `frontend/dist`, выставляет `NODE_ENV=production` и `HOST=0.0.0.0`, поднимает Express на `PORT` (по умолчанию **4000**). Сайт и `/api` с одного origin. В браузере: `http://<сервер>:4000`.
 
-2. Либо разнести: фронт на Vercel/Netlify/nginx (сборка из `frontend/dist`), бэкенд на Railway/Fly.io/VPS. Тогда на фронте задайте базовый URL API через переменную окружения (если используете) и настройте CORS на бэкенде под домен фронта.
+   Переменные: см. `backend/.env.example`. Минимум на проде задайте **`ADMIN_PASSWORD`**. База SQLite создаётся как `backend/wedding.sqlite` при первом запросе (файл в `.gitignore`).
 
-Рекомендуется задать `ADMIN_PASSWORD` и `NODE_ENV=production` на продакшене.
+2. **Раздельно**: статика из `frontend/dist` на CDN/nginx, API на отдельном хосте — тогда настройте CORS на бэкенде под домен фронта и базовый URL для `fetch('/api')` (потребуется правка фронта или reverse-proxy).
+
+Перед выкладкой: `npm run build` в корне (или в `frontend`) — убедитесь, что сборка без ошибок.

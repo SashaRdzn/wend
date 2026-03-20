@@ -4,22 +4,26 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', 'serif'],
+        display: ['Great', '"Segoe Script"', 'cursive'],
+        serif: ['Georgia', 'Times New Roman', 'Times', 'serif'],
         sans: ['system-ui', 'sans-serif'],
       },
       colors: {
+        cream: '#faf9f6',
+        ink: '#6b705c',
+        sage: '#a3b18a',
+        sand: '#e3d5ca',
+        moss: '#4a5243',
         blush: {
-          50: '#fff7f8',
-          100: '#ffe9ee',
-          200: '#ffd0db',
-          400: '#f78ca2',
-          500: '#f26c88',
+          50: '#f4f6f1',
+          100: '#e8ebe3',
+          200: '#d4dcc8',
+          400: '#a3b18a',
+          500: '#6b705c',
         },
-        ink: '#1b1230',
-        champagne: '#fdf4e3',
+        champagne: '#5c6654',
       },
     },
   },
   plugins: [],
 }
-
