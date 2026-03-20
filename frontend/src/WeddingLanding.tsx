@@ -505,13 +505,6 @@ export function WeddingLanding({
               </form>
             )}
           </section>
-
-          <footer className="mt-12 border-t border-ink/10 pt-6 text-[10px] text-ink/40 sm:mt-16 sm:pt-8 sm:text-[11px]">
-            <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-              <span>С любовью, Алиса и Михаил</span>
-              <span>Сделано как интерактивное веб‑приглашение</span>
-            </div>
-          </footer>
         </div>
       </div>
     </div>

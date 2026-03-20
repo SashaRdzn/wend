@@ -65,3 +65,12 @@ npm install --prefix backend
 2. **Раздельно**: статика из `frontend/dist` на CDN/nginx, API на отдельном хосте — тогда настройте CORS на бэкенде под домен фронта и базовый URL для `fetch('/api')` (потребуется правка фронта или reverse-proxy).
 
 Перед выкладкой: `npm run build` в корне (или в `frontend`) — убедитесь, что сборка без ошибок.
+
+### Render.com
+
+1. **Корневая папка сервиса (Root Directory):** `backend`.
+2. **Менеджер пакетов:** лучше **npm** (в настройках сервиса отключите принудительный Yarn, если есть). Тогда: **Build Command** `npm run build`, **Start Command** `npm start`.
+3. Если Render по умолчанию вызывает `yarn build` / `yarn install`: в `backend/package.json` уже есть скрипт **`build`** — он собирает `../frontend` через `npm ci` и затем ставит зависимости бэкенда. Предупреждения Yarn про `package-lock.json` можно игнорировать или перейти на npm.
+4. Переменные: `NODE_ENV=production`, `HOST=0.0.0.0`, обязательно **`ADMIN_PASSWORD`**. SQLite-файл на бесплатном плане эфемерный — для постоянных данных подключите [диск Render](https://render.com/docs/disks) и положите `wedding.sqlite` на диск (потребуется правка пути к БД в коде).
+
+Опционально: в корне репозитория есть **`render.yaml`** — можно подключить как Blueprint.

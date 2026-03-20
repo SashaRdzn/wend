@@ -1,21 +1,24 @@
 {
   "name": "wedding-backend",
   "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:lan": "npx cross-env HOST=0.0.0.0 tsx watch src/index.ts",
+    "build": "npm ci --prefix ../frontend && npm run build --prefix ../frontend && npm ci",
     "start": "tsx src/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "tsx": "^4.19.2"
+    "cross-env": "^7.0.3"
   }
 }

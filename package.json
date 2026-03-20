@@ -1,6 +1,7 @@
 {
   "name": "wedding",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "concurrently -k -n b,f \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "dev:lan": "concurrently -k -n b,f \"npm run dev:lan --prefix backend\" \"npm run dev:lan --prefix frontend\"",
