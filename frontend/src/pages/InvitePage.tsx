@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { apiUrl } from '../apiUrl'
 import { WeddingLanding } from '../WeddingLanding'
 
 type Guest = {
@@ -23,7 +24,7 @@ export function InvitePage() {
     const load = async () => {
       if (!token) return
       try {
-        const res = await fetch(`/api/guests/by-token/${token}`)
+        const res = await fetch(apiUrl(`/api/guests/by-token/${token}`))
         if (!res.ok) throw new Error('Failed')
         const data = (await res.json()) as Guest
         setGuest(data)
@@ -39,7 +40,7 @@ export function InvitePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
-    const res = await fetch(`/api/rsvp/${token}`, {
+    const res = await fetch(apiUrl(`/api/rsvp/${token}`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, plusOne, comment }),

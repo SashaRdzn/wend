@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { apiUrl } from '../apiUrl'
 
 const ADMIN_TOKEN_KEY = 'wedding-admin-token'
 
@@ -33,7 +34,7 @@ export function AdminPage() {
     setLoginError('')
     setLoginLoading(true)
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(apiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
@@ -57,7 +58,7 @@ export function AdminPage() {
   const handleLogout = () => {
     const t = localStorage.getItem(ADMIN_TOKEN_KEY)
     if (t) {
-      fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${t}` } }).catch(() => {})
+      fetch(apiUrl('/api/auth/logout'), { method: 'POST', headers: { Authorization: `Bearer ${t}` } }).catch(() => {})
     }
     localStorage.removeItem(ADMIN_TOKEN_KEY)
     setToken(null)
@@ -70,7 +71,7 @@ export function AdminPage() {
     }
     const load = async () => {
       try {
-        const res = await fetch('/api/guests', { headers: getAuthHeaders() })
+        const res = await fetch(apiUrl('/api/guests'), { headers: getAuthHeaders() })
         if (res.status === 401) {
           localStorage.removeItem(ADMIN_TOKEN_KEY)
           setToken(null)
@@ -91,7 +92,7 @@ export function AdminPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !token) return
-    const res = await fetch('/api/guests', {
+    const res = await fetch(apiUrl('/api/guests'), {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ name }),
