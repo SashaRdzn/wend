@@ -17,6 +17,33 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 const sessions = new Map<string, { expiresAt: number }>()
 
+const ALCOHOL_KEYS = ['beer', 'liquor', 'wine', 'champagne', 'vodka'] as const
+type AlcoholKey = (typeof ALCOHOL_KEYS)[number]
+
+function normalizeAlcoholPreferences(input: unknown): string | null {
+  if (input === undefined || input === null) return null
+  if (!Array.isArray(input)) return null
+  const allowed = new Set<string>(ALCOHOL_KEYS)
+  const cleaned = [
+    ...new Set(
+      input.filter((x): x is string => typeof x === 'string' && allowed.has(x)),
+    ),
+  ].sort() as AlcoholKey[]
+  return JSON.stringify(cleaned)
+}
+
+function parseAlcoholJson(raw: string | null | undefined): string[] {
+  if (raw == null || raw === '') return []
+  try {
+    const v = JSON.parse(raw) as unknown
+    if (!Array.isArray(v)) return []
+    const allowed = new Set<string>(ALCOHOL_KEYS)
+    return v.filter((x): x is string => typeof x === 'string' && allowed.has(x))
+  } catch {
+    return []
+  }
+}
+
 function authMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
   const header = req.headers.authorization
   const token = header?.startsWith('Bearer ') ? header.slice(7) : ''
@@ -52,6 +79,10 @@ async function initDb() {
         updatedAt TEXT NOT NULL
       );
     `)
+    const cols = await db.all<{ name: string }>('PRAGMA table_info(guests)')
+    if (!cols.some((c) => c.name === 'alcoholPreferences')) {
+      await db.exec('ALTER TABLE guests ADD COLUMN alcoholPreferences TEXT')
+    }
   }
   return dbPromise
 }
@@ -82,12 +113,13 @@ app.get('/api/guests', authMiddleware, async (_req, res) => {
   try {
     const db = await initDb()
     const guests = await db.all(
-      'SELECT id, name, token, status, plusOne, comment FROM guests ORDER BY createdAt ASC',
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests ORDER BY createdAt ASC',
     )
     res.json(
       guests.map((g) => ({
         ...g,
         plusOne: !!g.plusOne,
+        alcoholPreferences: parseAlcoholJson(g.alcoholPreferences as string | null),
       })),
     )
   } catch (e) {
@@ -106,22 +138,24 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
     const token = generateToken()
     const now = new Date().toISOString()
     const result = await db.run(
-      'INSERT INTO guests (name, token, status, plusOne, comment, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       name.trim(),
       token,
       'pending',
       0,
       null,
+      null,
       now,
       now,
     )
     const created = await db.get(
-      'SELECT id, name, token, status, plusOne, comment FROM guests WHERE id = ?',
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests WHERE id = ?',
       result.lastID,
     )
     res.status(201).json({
       ...created,
       plusOne: !!created.plusOne,
+      alcoholPreferences: parseAlcoholJson(created.alcoholPreferences as string | null),
     })
   } catch (e) {
     console.error(e)
@@ -133,13 +167,16 @@ app.get('/api/guests/by-token/:token', async (req, res) => {
   try {
     const db = await initDb()
     const guest = await db.get(
-      'SELECT id, name, token FROM guests WHERE token = ?',
+      'SELECT id, name, token, alcoholPreferences FROM guests WHERE token = ?',
       req.params.token,
     )
     if (!guest) {
       return res.status(404).json({ error: 'Guest not found' })
     }
-    res.json(guest)
+    res.json({
+      ...guest,
+      alcoholPreferences: parseAlcoholJson(guest.alcoholPreferences as string | null),
+    })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Failed to load guest' })
@@ -147,14 +184,16 @@ app.get('/api/guests/by-token/:token', async (req, res) => {
 })
 
 app.post('/api/rsvp/:token', async (req, res) => {
-  const { status, plusOne, comment } = req.body as {
+  const { status, plusOne, comment, alcoholPreferences } = req.body as {
     status?: string
     plusOne?: boolean
     comment?: string
+    alcoholPreferences?: unknown
   }
   if (!status || !['accepted', 'declined', 'pending'].includes(status)) {
     return res.status(400).json({ error: 'Invalid status' })
   }
+  const alcoholJson = normalizeAlcoholPreferences(alcoholPreferences)
   try {
     const db = await initDb()
     const existing = await db.get(
@@ -166,10 +205,11 @@ app.post('/api/rsvp/:token', async (req, res) => {
     }
     const now = new Date().toISOString()
     await db.run(
-      'UPDATE guests SET status = ?, plusOne = ?, comment = ?, updatedAt = ? WHERE token = ?',
+      'UPDATE guests SET status = ?, plusOne = ?, comment = ?, alcoholPreferences = ?, updatedAt = ? WHERE token = ?',
       status,
       plusOne ? 1 : 0,
       comment ?? null,
+      alcoholJson,
       now,
       req.params.token,
     )

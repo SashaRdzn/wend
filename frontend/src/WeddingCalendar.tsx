@@ -96,10 +96,6 @@ export function WeddingCalendar() {
           </div>
         ))}
       </div>
-
-      <p className="mt-6 text-center font-display text-sm text-rose-400/90 sm:text-base">
-        ♥ наш день ♥
-      </p>
     </div>
   )
 }

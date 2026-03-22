@@ -1,8 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ALCOHOL_KEYS, ALCOHOL_LABELS, type AlcoholKey } from '../alcoholOptions'
 import { apiUrl } from '../apiUrl'
 
 const ADMIN_TOKEN_KEY = 'wedding-admin-token'
+
+const ANALYTICS_BAR: Record<AlcoholKey, string> = {
+  beer: 'from-amber-300 to-amber-500/90',
+  liquor: 'from-violet-300 to-violet-500/85',
+  wine: 'from-rose-300 to-rose-500/85',
+  champagne: 'from-yellow-200 to-amber-400/90',
+  vodka: 'from-sky-200 to-sky-500/80',
+}
 
 type Guest = {
   id: number
@@ -11,6 +20,12 @@ type Guest = {
   status: 'pending' | 'accepted' | 'declined'
   plusOne: boolean
   comment: string | null
+  alcoholPreferences: AlcoholKey[] | null
+}
+
+function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
+  if (!p?.length) return null
+  return p.map((k) => ALCOHOL_LABELS[k]).join(', ')
 }
 
 function getAuthHeaders(): HeadersInit {
@@ -111,6 +126,21 @@ export function AdminPage() {
   const accepted = guests.filter((g) => g.status === 'accepted').length
   const declined = guests.filter((g) => g.status === 'declined').length
 
+  const alcoholAnalytics = useMemo(() => {
+    const total = guests.length
+    const counts = Object.fromEntries(ALCOHOL_KEYS.map((k) => [k, 0])) as Record<AlcoholKey, number>
+    let withAny = 0
+    for (const g of guests) {
+      const prefs = g.alcoholPreferences ?? []
+      if (prefs.length) withAny++
+      for (const k of prefs) {
+        if (ALCOHOL_KEYS.includes(k)) counts[k]++
+      }
+    }
+    const pctOfAll = (n: number) => (total ? (n / total) * 100 : 0)
+    return { total, counts, withAny, pctOfAll }
+  }, [guests])
+
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream p-3 text-ink sm:p-4">
@@ -200,6 +230,49 @@ export function AdminPage() {
           </div>
         </section>
 
+        {guests.length > 0 && (
+          <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-xs font-semibold text-champagne sm:text-sm">
+                Напитки — аналитика
+              </h2>
+              <p className="max-w-md text-[10px] text-ink/45 sm:text-[11px]">
+                Доля гостей от всего списка ({alcoholAnalytics.total} чел.). Отметили хотя бы один напиток:{' '}
+                <span className="font-medium text-ink/65">{alcoholAnalytics.withAny}</span>.
+              </p>
+            </div>
+            <div className="space-y-3.5">
+              {ALCOHOL_KEYS.map((key) => {
+                const n = alcoholAnalytics.counts[key]
+                const pct = alcoholAnalytics.pctOfAll(n)
+                const pctLabel = pct.toLocaleString('ru-RU', {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 1,
+                })
+                return (
+                  <div key={key}>
+                    <div className="mb-1 flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+                      <span className="font-medium text-champagne">{ALCOHOL_LABELS[key]}</span>
+                      <span className="tabular-nums text-ink/55">
+                        {n}{' '}
+                        <span className="text-ink/40">
+                          ({pctLabel}%)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-cream ring-1 ring-ink/8">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${ANALYTICS_BAR[key]} transition-[width] duration-500 ease-out`}
+                        style={{ width: `${Math.min(100, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
         <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
           <h2 className="mb-2 text-xs font-semibold text-champagne sm:mb-3 sm:text-sm">
             Добавить гостя
@@ -252,6 +325,12 @@ export function AdminPage() {
                     >
                       /invite/{g.token}
                     </a>
+                    {formatGuestAlcohol(g.alcoholPreferences) && (
+                      <p className="mt-2 text-[11px] text-ink/60">
+                        <span className="text-ink/40">Напитки: </span>
+                        {formatGuestAlcohol(g.alcoholPreferences)}
+                      </p>
+                    )}
                     {g.comment && (
                       <p className="mt-2 border-t border-ink/10 pt-2 text-ink/65">
                         {g.comment}
@@ -261,12 +340,13 @@ export function AdminPage() {
                 ))}
               </div>
               <div className="hidden overflow-x-auto sm:block">
-                <table className="min-w-[600px] border-separate border-spacing-y-1 text-left">
+                <table className="min-w-[760px] border-separate border-spacing-y-1 text-left">
                   <thead className="text-[11px] uppercase tracking-[0.16em] text-ink/45">
                     <tr>
                       <th className="px-3 py-1">Имя</th>
                       <th className="px-3 py-1">Статус</th>
                       <th className="px-3 py-1">+1</th>
+                      <th className="px-3 py-1">Напитки</th>
                       <th className="px-3 py-1">Ссылка</th>
                       <th className="px-3 py-1">Комментарий</th>
                     </tr>
@@ -287,6 +367,11 @@ export function AdminPage() {
                         </td>
                         <td className="px-3 py-2">
                           {g.plusOne ? 'Да' : 'Нет'}
+                        </td>
+                        <td className="max-w-[140px] px-3 py-2 text-[11px] text-ink/70">
+                          {formatGuestAlcohol(g.alcoholPreferences) ?? (
+                            <span className="text-ink/35">—</span>
+                          )}
                         </td>
                         <td className="px-3 py-2">
                           <a

@@ -33,13 +33,13 @@ export function OpeningHero() {
           <h2 className="font-display text-[2.75rem] leading-none text-moss sm:text-6xl md:text-7xl">
             Wedding Day
           </h2>
-          <p className="mt-3 font-serif text-[13px] lowercase tracking-[0.12em] text-ink/75 sm:text-sm">
+          {/* <p className="mt-3 font-serif text-[13px] lowercase tracking-[0.12em] text-ink/75 sm:text-sm">
             it&apos;s our
-          </p>
+          </p> */}
         </div>
 
         <div className="mt-auto flex flex-col">
-          <div className="mb-10 self-end text-right font-serif text-[11px] font-medium leading-relaxed tracking-[0.28em] text-ink sm:mb-14 sm:text-xs sm:tracking-[0.32em]">
+          <div className="mb-10 self-end text-right font-serif text-[23px] font-medium leading-relaxed tracking-[0.28em] text-ink sm:mb-14 sm:text-xs sm:tracking-[0.32em]">
             <div>ВЛАДИМИР</div>
             <div className="my-1 font-display text-2xl tracking-normal text-sage sm:text-3xl">
               &

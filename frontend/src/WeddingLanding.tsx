@@ -72,9 +72,9 @@ export function WeddingLanding({
         <div className="relative mx-auto flex max-w-6xl flex-col px-3 pb-16 pt-[max(2.5rem,env(safe-area-inset-top))] sm:px-6 lg:px-8 lg:pt-14">
           <header className="flex items-center justify-between gap-3">
             <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-ink/10 bg-white/55 px-3 py-1.5 text-[10px] tracking-[0.14em] uppercase text-ink/65 backdrop-blur sm:px-4 sm:py-1 sm:text-xs sm:tracking-[0.18em]">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage shadow-[0_0_12px_rgba(163,177,138,0.75)]" />
+              {/* <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage shadow-[0_0_12px_rgba(163,177,138,0.75)]" /> */}
               <span className="truncate">
-                Wedding · 6 июн 2026
+            
                 {guestName ? (
                   <span className="text-ink/75"> · {guestName}</span>
                 ) : null}

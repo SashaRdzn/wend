@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import {
+  ALCOHOL_KEYS,
+  ALCOHOL_LABELS,
+  type AlcoholKey,
+  parseAlcoholPreferences,
+} from '../alcoholOptions'
 import { apiUrl } from '../apiUrl'
 import { WeddingLanding } from '../WeddingLanding'
 
@@ -7,6 +13,7 @@ type Guest = {
   id: number
   name: string
   token: string
+  alcoholPreferences?: AlcoholKey[]
 }
 
 export function InvitePage() {
@@ -18,6 +25,7 @@ export function InvitePage() {
   )
   const [plusOne, setPlusOne] = useState(false)
   const [comment, setComment] = useState('')
+  const [alcohol, setAlcohol] = useState<Set<AlcoholKey>>(() => new Set())
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
@@ -28,6 +36,7 @@ export function InvitePage() {
         if (!res.ok) throw new Error('Failed')
         const data = (await res.json()) as Guest
         setGuest(data)
+        setAlcohol(new Set(parseAlcoholPreferences(data.alcoholPreferences)))
       } catch {
         /* сеть / сервер недоступны */
       } finally {
@@ -37,17 +46,32 @@ export function InvitePage() {
     load()
   }, [token])
 
+  const toggleAlcohol = (key: AlcoholKey) => {
+    setAlcohol((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const selectAllAlcohol = () => setAlcohol(new Set(ALCOHOL_KEYS))
+  const clearAlcohol = () => setAlcohol(new Set())
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
+    const alcoholPreferences = status === 'declined' ? [] : [...alcohol]
     const res = await fetch(apiUrl(`/api/rsvp/${token}`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, plusOne, comment }),
+      body: JSON.stringify({ status, plusOne, comment, alcoholPreferences }),
     })
     if (!res.ok) return
     setSubmitted(true)
   }
+
+  const alcoholDisabled = status === 'declined'
 
   if (loading) {
     return (
@@ -141,6 +165,72 @@ export function InvitePage() {
             Буду со спутником
           </button>
         </div>
+      </div>
+
+      <div
+        className={`rounded-2xl border border-ink/10 bg-cream/50 p-3 sm:p-4 ${alcoholDisabled ? 'opacity-45' : ''}`}
+      >
+        <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-ink/50">
+              Что пьём на празднике
+            </p>
+            <p className="mt-0.5 text-[10px] text-ink/40 sm:text-[11px]">
+              Можно выбрать несколько вариантов или всё сразу
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              disabled={alcoholDisabled}
+              onClick={selectAllAlcohol}
+              className="rounded-full border border-sage/40 bg-white/80 px-3 py-1 text-[10px] font-medium text-moss transition hover:bg-sage/20 disabled:pointer-events-none sm:text-[11px]"
+            >
+              Выбрать всё
+            </button>
+            <button
+              type="button"
+              disabled={alcoholDisabled}
+              onClick={clearAlcohol}
+              className="rounded-full border border-ink/10 bg-white/60 px-3 py-1 text-[10px] text-ink/55 transition hover:bg-white disabled:pointer-events-none sm:text-[11px]"
+            >
+              Снять всё
+            </button>
+          </div>
+        </div>
+        {alcoholDisabled ? (
+          <p className="text-[11px] text-ink/45">Не требуется, если вы не приедете.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5">
+            {ALCOHOL_KEYS.map((key) => {
+              const on = alcohol.has(key)
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleAlcohol(key)}
+                  className={`relative min-h-[48px] rounded-2xl border px-3 py-2.5 text-left text-xs font-medium transition sm:min-h-[52px] sm:text-[13px] ${
+                    on
+                      ? 'border-sage bg-gradient-to-br from-sage/35 to-sand/40 text-moss shadow-sm shadow-ink/5 ring-1 ring-sage/30'
+                      : 'border-ink/10 bg-white/70 text-ink/70 hover:border-ink/18 hover:bg-white'
+                  }`}
+                >
+                  <span
+                    className={`mr-2 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-md border text-[9px] ${
+                      on
+                        ? 'border-moss/40 bg-moss/15 text-moss'
+                        : 'border-ink/15 bg-cream text-transparent'
+                    }`}
+                    aria-hidden
+                  >
+                    ✓
+                  </span>
+                  {ALCOHOL_LABELS[key]}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div>
