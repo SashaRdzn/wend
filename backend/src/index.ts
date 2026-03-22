@@ -175,6 +175,24 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
   }
 })
 
+app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
+  const id = Number(req.params.id)
+  if (!Number.isFinite(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid id' })
+  }
+  try {
+    const db = await initDb()
+    const result = await db.run('DELETE FROM guests WHERE id = ?', id)
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Guest not found' })
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to delete guest' })
+  }
+})
+
 app.get('/api/guests/by-token/:token', async (req, res) => {
   try {
     const db = await initDb()

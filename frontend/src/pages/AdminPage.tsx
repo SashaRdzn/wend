@@ -125,6 +125,7 @@ export function AdminPage() {
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -234,6 +235,35 @@ export function AdminPage() {
       writeGuestCache(token, list)
     } catch {
       /* оставляем список как был */
+    }
+  }
+
+  const handleDelete = async (g: Guest) => {
+    if (!token) return
+    const ok = window.confirm(
+      `Удалить приглашение для «${g.name}»?\nПерсональная ссылка перестанет работать.`,
+    )
+    if (!ok) return
+    setDeletingId(g.id)
+    try {
+      const res = await fetch(apiUrl(`/api/guests/${g.id}`), {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+      if (res.status === 401) {
+        localStorage.removeItem(ADMIN_TOKEN_KEY)
+        clearGuestCache()
+        setToken(null)
+        return
+      }
+      if (!res.ok) return
+      setGuests((prev) => {
+        const next = prev.filter((x) => x.id !== g.id)
+        writeGuestCache(token, next)
+        return next
+      })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -452,11 +482,19 @@ export function AdminPage() {
                         {g.comment}
                       </p>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(g)}
+                      disabled={deletingId === g.id}
+                      className="mt-3 min-h-[40px] w-full rounded-xl border border-red-200/90 bg-red-50/80 px-3 py-2 text-[11px] font-medium text-red-900/85 transition hover:bg-red-100/90 disabled:opacity-50"
+                    >
+                      {deletingId === g.id ? 'Удаление…' : 'Удалить приглашение'}
+                    </button>
                   </div>
                 ))}
               </div>
               <div className="hidden overflow-x-auto sm:block">
-                <table className="min-w-[760px] border-separate border-spacing-y-1 text-left">
+                <table className="min-w-[860px] border-separate border-spacing-y-1 text-left">
                   <thead className="text-[11px] uppercase tracking-[0.16em] text-ink/45">
                     <tr>
                       <th className="px-3 py-1">Имя</th>
@@ -465,6 +503,9 @@ export function AdminPage() {
                       <th className="px-3 py-1">Напитки</th>
                       <th className="px-3 py-1">Ссылка</th>
                       <th className="px-3 py-1">Комментарий</th>
+                      <th className="w-28 px-3 py-1">
+                        <span className="sr-only">Действия</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -501,6 +542,16 @@ export function AdminPage() {
                         </td>
                         <td className="px-3 py-2 max-w-xs">
                           {g.comment ?? <span className="text-ink/35">—</span>}
+                        </td>
+                        <td className="px-3 py-2 align-middle">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(g)}
+                            disabled={deletingId === g.id}
+                            className="rounded-lg border border-red-200/90 bg-red-50/80 px-2.5 py-1.5 text-[10px] font-medium text-red-900/85 transition hover:bg-red-100/90 disabled:opacity-50"
+                          >
+                            {deletingId === g.id ? '…' : 'Удалить'}
+                          </button>
                         </td>
                       </tr>
                     ))}
