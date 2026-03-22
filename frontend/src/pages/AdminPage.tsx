@@ -109,6 +109,11 @@ function getAuthHeaders(): HeadersInit {
   return headers
 }
 
+function publicInviteUrl(inviteToken: string) {
+  if (typeof window === 'undefined') return `/invite/${inviteToken}`
+  return `${window.location.origin}/invite/${inviteToken}`
+}
+
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(ADMIN_TOKEN_KEY))
   const [guests, setGuests] = useState<Guest[]>(() => {
@@ -126,6 +131,19 @@ export function AdminPage() {
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [copiedId, setCopiedId] = useState<number | null>(null)
+
+  const copyInviteLink = async (g: Guest) => {
+    try {
+      await navigator.clipboard.writeText(publicInviteUrl(g.token))
+      setCopiedId(g.id)
+      window.setTimeout(() => {
+        setCopiedId((cur) => (cur === g.id ? null : cur))
+      }, 2000)
+    } catch {
+      /* нет доступа к буферу */
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -471,6 +489,13 @@ export function AdminPage() {
                     >
                       /invite/{g.token}
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => copyInviteLink(g)}
+                      className="mt-2 min-h-[40px] w-full rounded-xl border border-sage/40 bg-white/90 px-3 py-2 text-[11px] font-medium text-moss transition hover:bg-sage/15 active:scale-[0.99]"
+                    >
+                      {copiedId === g.id ? 'Ссылка скопирована' : 'Скопировать ссылку'}
+                    </button>
                     {formatGuestAlcohol(g.alcoholPreferences) && (
                       <p className="mt-2 text-[11px] text-ink/60">
                         <span className="text-ink/40">Напитки: </span>
@@ -530,15 +555,24 @@ export function AdminPage() {
                             <span className="text-ink/35">—</span>
                           )}
                         </td>
-                        <td className="px-3 py-2">
-                          <a
-                            href={`/invite/${g.token}`}
-                            className="break-all text-sage underline underline-offset-2"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            /invite/{g.token}
-                          </a>
+                        <td className="max-w-[200px] px-3 py-2">
+                          <div className="flex flex-col gap-1.5">
+                            <a
+                              href={`/invite/${g.token}`}
+                              className="break-all text-sage underline underline-offset-2"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              /invite/{g.token}
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => copyInviteLink(g)}
+                              className="w-max rounded-lg border border-sage/40 bg-white/90 px-2 py-1 text-[10px] font-medium text-moss transition hover:bg-sage/15"
+                            >
+                              {copiedId === g.id ? 'Скопировано' : 'Скопировать ссылку'}
+                            </button>
+                          </div>
                         </td>
                         <td className="px-3 py-2 max-w-xs">
                           {g.comment ?? <span className="text-ink/35">—</span>}
