@@ -31,6 +31,7 @@ function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
 }
 
 function parseAlcoholPrefs(v: unknown): AlcoholKey[] {
+  if (v === undefined || v === null) return []
   let arr: unknown[] = []
   if (Array.isArray(v)) arr = v
   else if (typeof v === 'string') {
@@ -216,19 +217,24 @@ export function AdminPage() {
     })
     if (res.status === 401) {
       localStorage.removeItem(ADMIN_TOKEN_KEY)
+      clearGuestCache()
       setToken(null)
       return
     }
     if (!res.ok) return
-    const createdRaw = await res.json()
-    const created = parseGuest(createdRaw)
-    if (!created) return
-    setGuests((prev) => {
-      const next = [...prev, created]
-      writeGuestCache(token, next)
-      return next
-    })
     setName('')
+    try {
+      const listRes = await fetch(apiUrl('/api/guests'), { headers: getAuthHeaders() })
+      if (!listRes.ok) return
+      const raw = await listRes.json()
+      const list = Array.isArray(raw)
+        ? raw.map(parseGuest).filter((g): g is Guest => g !== null)
+        : []
+      setGuests(list)
+      writeGuestCache(token, list)
+    } catch {
+      /* оставляем список как был */
+    }
   }
 
   const accepted = guests.filter((g) => g.status === 'accepted').length
@@ -236,13 +242,14 @@ export function AdminPage() {
 
   const alcoholAnalytics = useMemo(() => {
     const total = guests.length
+    const allowed = new Set<string>(ALCOHOL_KEYS)
     const counts = Object.fromEntries(ALCOHOL_KEYS.map((k) => [k, 0])) as Record<AlcoholKey, number>
     let withAny = 0
     for (const g of guests) {
       const prefs = g.alcoholPreferences ?? []
       if (prefs.length) withAny++
       for (const k of prefs) {
-        if (ALCOHOL_KEYS.includes(k)) counts[k]++
+        if (allowed.has(k)) counts[k as AlcoholKey]++
       }
     }
     const pctOfAll = (n: number) => (total ? (n / total) * 100 : 0)

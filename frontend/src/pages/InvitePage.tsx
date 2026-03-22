@@ -20,22 +20,65 @@ type Guest = {
   hasResponded?: boolean
 }
 
+const inviteStorageKey = (t: string) => `wend-invite-guest:${t}`
+
+function readInviteGuest(t: string): Guest | null {
+  try {
+    const raw = sessionStorage.getItem(inviteStorageKey(t))
+    if (!raw) return null
+    return JSON.parse(raw) as Guest
+  } catch {
+    return null
+  }
+}
+
+function writeInviteGuest(t: string, g: Guest) {
+  try {
+    sessionStorage.setItem(inviteStorageKey(t), JSON.stringify(g))
+  } catch {
+    /* quota */
+  }
+}
+
+function formDefaultsFromGuest(g: Guest | null) {
+  const st = g?.status
+  const status: 'accepted' | 'declined' | 'pending' =
+    st === 'accepted' || st === 'declined' || st === 'pending' ? st : 'accepted'
+  return {
+    status,
+    plusOne: !!g?.plusOne,
+    comment: typeof g?.comment === 'string' ? g.comment : '',
+    alcohol: new Set(parseAlcoholPreferences(g?.alcoholPreferences)),
+  }
+}
+
 export function InvitePage() {
   const { token } = useParams<{ token: string }>()
-  const [guest, setGuest] = useState<Guest | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [guest, setGuest] = useState<Guest | null>(() => (token ? readInviteGuest(token) : null))
+  const [loading, setLoading] = useState(() => {
+    if (!token) return false
+    return readInviteGuest(token) === null
+  })
   const [editing, setEditing] = useState(false)
-  const [status, setStatus] = useState<'accepted' | 'declined' | 'pending'>(
-    'accepted',
+  const [status, setStatus] = useState<'accepted' | 'declined' | 'pending'>(() =>
+    formDefaultsFromGuest(token ? readInviteGuest(token) : null).status,
   )
-  const [plusOne, setPlusOne] = useState(false)
-  const [comment, setComment] = useState('')
-  const [alcohol, setAlcohol] = useState<Set<AlcoholKey>>(() => new Set())
+  const [plusOne, setPlusOne] = useState(() =>
+    formDefaultsFromGuest(token ? readInviteGuest(token) : null).plusOne,
+  )
+  const [comment, setComment] = useState(() =>
+    formDefaultsFromGuest(token ? readInviteGuest(token) : null).comment,
+  )
+  const [alcohol, setAlcohol] = useState<Set<AlcoholKey>>(() =>
+    formDefaultsFromGuest(token ? readInviteGuest(token) : null).alcohol,
+  )
 
   useEffect(() => {
     if (!token) return
     setEditing(false)
     let cancelled = false
+    const hadCache = readInviteGuest(token) !== null
+    if (!hadCache) setLoading(true)
     const load = async () => {
       try {
         const res = await fetch(apiUrl(`/api/guests/by-token/${token}`))
@@ -43,6 +86,7 @@ export function InvitePage() {
         const data = (await res.json()) as Guest
         if (cancelled) return
         setGuest(data)
+        writeInviteGuest(token, data)
         if (data.status) setStatus(data.status)
         setPlusOne(!!data.plusOne)
         setComment(typeof data.comment === 'string' ? data.comment : '')
@@ -53,7 +97,6 @@ export function InvitePage() {
         if (!cancelled) setLoading(false)
       }
     }
-    setLoading(true)
     load()
     return () => {
       cancelled = true
@@ -82,7 +125,12 @@ export function InvitePage() {
       body: JSON.stringify({ status, plusOne, comment, alcoholPreferences }),
     })
     if (!res.ok) return
-    setGuest((g) => (g ? { ...g, hasResponded: true } : g))
+    setGuest((g) => {
+      if (!g) return g
+      const next = { ...g, hasResponded: true as const }
+      writeInviteGuest(token, next)
+      return next
+    })
     setEditing(false)
   }
 
@@ -92,14 +140,12 @@ export function InvitePage() {
 
   if (loading) {
     return (
-      <>
-      </>
-      // <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-ink/60">
-      //   Загружаем ваше приглашение…
-      // </div>
+      <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-ink/60">
+        Загружаем ваше приглашение…
+      </div>
     )
   }
-  
+
   if (!guest || !token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-center">

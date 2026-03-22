@@ -9,6 +9,11 @@ import crypto from 'crypto'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+/** На Render без диска файл теряется при рестарте — задайте SQLITE_PATH на смонтированный том, например /data/wedding.sqlite */
+const SQLITE_FILE = process.env.SQLITE_PATH
+  ? path.resolve(process.env.SQLITE_PATH)
+  : path.join(__dirname, '..', 'wedding.sqlite')
+
 const app = express()
 const PORT = Number(process.env.PORT) || 4000
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1')
@@ -63,7 +68,7 @@ let dbPromise: ReturnType<typeof open<sqlite3.Database, sqlite3.Statement>>
 async function initDb() {
   if (!dbPromise) {
     dbPromise = open({
-      filename: './wedding.sqlite',
+      filename: SQLITE_FILE,
       driver: sqlite3.Database,
     })
     const db = await dbPromise
