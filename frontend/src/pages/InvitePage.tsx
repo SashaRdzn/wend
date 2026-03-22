@@ -92,12 +92,14 @@ export function InvitePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-ink/60">
-        Загружаем ваше приглашение…
-      </div>
+      <>
+      </>
+      // <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-ink/60">
+      //   Загружаем ваше приглашение…
+      // </div>
     )
   }
-
+  
   if (!guest || !token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream px-4 text-center">
