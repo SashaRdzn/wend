@@ -4,6 +4,8 @@ import { ALCOHOL_KEYS, ALCOHOL_LABELS, type AlcoholKey } from '../alcoholOptions
 import { apiUrl } from '../apiUrl'
 
 const ADMIN_TOKEN_KEY = 'wedding-admin-token'
+const GUESTS_CACHE_JSON = 'wend-admin-guests-json'
+const GUESTS_CACHE_TOKEN = 'wend-admin-guests-for-token'
 
 const ANALYTICS_BAR: Record<AlcoholKey, string> = {
   beer: 'from-amber-300 to-amber-500/90',
@@ -28,6 +30,77 @@ function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
   return p.map((k) => ALCOHOL_LABELS[k]).join(', ')
 }
 
+function parseAlcoholPrefs(v: unknown): AlcoholKey[] {
+  let arr: unknown[] = []
+  if (Array.isArray(v)) arr = v
+  else if (typeof v === 'string') {
+    try {
+      const p = JSON.parse(v) as unknown
+      if (Array.isArray(p)) arr = p
+    } catch {
+      /* ignore */
+    }
+  }
+  const allowed = new Set<string>(ALCOHOL_KEYS)
+  return arr.filter((k): k is AlcoholKey => typeof k === 'string' && allowed.has(k))
+}
+
+function parseGuest(raw: unknown): Guest | null {
+  if (!raw || typeof raw !== 'object') return null
+  const o = raw as Record<string, unknown>
+  const id = Number(o.id)
+  if (!Number.isFinite(id)) return null
+  const name = typeof o.name === 'string' ? o.name : ''
+  const token = typeof o.token === 'string' ? o.token : ''
+  const status =
+    o.status === 'accepted' || o.status === 'declined' || o.status === 'pending'
+      ? o.status
+      : 'pending'
+  const plusOne = Boolean(o.plusOne)
+  const comment = o.comment === null || typeof o.comment === 'string' ? o.comment : null
+  const prefs = parseAlcoholPrefs(o.alcoholPreferences)
+  return {
+    id,
+    name,
+    token,
+    status,
+    plusOne,
+    comment,
+    alcoholPreferences: prefs.length ? prefs : null,
+  }
+}
+
+function readGuestCache(authToken: string): Guest[] | undefined {
+  try {
+    if (sessionStorage.getItem(GUESTS_CACHE_TOKEN) !== authToken) return undefined
+    const raw = sessionStorage.getItem(GUESTS_CACHE_JSON)
+    if (raw === null) return undefined
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return undefined
+    return parsed.map(parseGuest).filter((g): g is Guest => g !== null)
+  } catch {
+    return undefined
+  }
+}
+
+function writeGuestCache(authToken: string, list: Guest[]) {
+  try {
+    sessionStorage.setItem(GUESTS_CACHE_TOKEN, authToken)
+    sessionStorage.setItem(GUESTS_CACHE_JSON, JSON.stringify(list))
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function clearGuestCache() {
+  try {
+    sessionStorage.removeItem(GUESTS_CACHE_TOKEN)
+    sessionStorage.removeItem(GUESTS_CACHE_JSON)
+  } catch {
+    /* ignore */
+  }
+}
+
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem(ADMIN_TOKEN_KEY)
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
@@ -37,8 +110,16 @@ function getAuthHeaders(): HeadersInit {
 
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(ADMIN_TOKEN_KEY))
-  const [guests, setGuests] = useState<Guest[]>([])
-  const [loading, setLoading] = useState(!!token)
+  const [guests, setGuests] = useState<Guest[]>(() => {
+    const t = localStorage.getItem(ADMIN_TOKEN_KEY)
+    if (!t) return []
+    return readGuestCache(t) ?? []
+  })
+  const [loading, setLoading] = useState(() => {
+    const t = localStorage.getItem(ADMIN_TOKEN_KEY)
+    if (!t) return false
+    return readGuestCache(t) === undefined
+  })
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
@@ -77,15 +158,21 @@ export function AdminPage() {
       fetch(apiUrl('/api/auth/logout'), { method: 'POST', headers: { Authorization: `Bearer ${t}` } }).catch(() => {})
     }
     localStorage.removeItem(ADMIN_TOKEN_KEY)
+    clearGuestCache()
+    setGuests([])
     setToken(null)
   }
 
   useEffect(() => {
     if (!token) {
       setLoading(false)
+      setGuests([])
       return
     }
-    setLoading(true)
+    const cached = readGuestCache(token)
+    const needBlockingLoader = cached === undefined
+    if (needBlockingLoader) setLoading(true)
+
     let cancelled = false
     const load = async () => {
       try {
@@ -93,13 +180,20 @@ export function AdminPage() {
         if (cancelled) return
         if (res.status === 401) {
           localStorage.removeItem(ADMIN_TOKEN_KEY)
+          clearGuestCache()
           setGuests([])
           setToken(null)
           return
         }
         if (!res.ok) throw new Error('Failed')
-        const data = (await res.json()) as Guest[]
-        setGuests(data)
+        const raw = await res.json()
+        const list = Array.isArray(raw)
+          ? raw.map(parseGuest).filter((g): g is Guest => g !== null)
+          : []
+        if (!cancelled) {
+          setGuests(list)
+          writeGuestCache(token, list)
+        }
       } catch {
         /* сеть / сервер недоступны */
       } finally {
@@ -126,8 +220,14 @@ export function AdminPage() {
       return
     }
     if (!res.ok) return
-    const created = (await res.json()) as Guest
-    setGuests((prev) => [...prev, created])
+    const createdRaw = await res.json()
+    const created = parseGuest(createdRaw)
+    if (!created) return
+    setGuests((prev) => {
+      const next = [...prev, created]
+      writeGuestCache(token, next)
+      return next
+    })
     setName('')
   }
 
@@ -238,8 +338,7 @@ export function AdminPage() {
           </div>
         </section>
 
-        {guests.length > 0 && (
-          <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
+        <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-xs font-semibold text-champagne sm:text-sm">
                 Напитки — аналитика
@@ -247,6 +346,9 @@ export function AdminPage() {
               <p className="max-w-md text-[10px] text-ink/45 sm:text-[11px]">
                 Доля гостей от всего списка ({alcoholAnalytics.total} чел.). Отметили хотя бы один напиток:{' '}
                 <span className="font-medium text-ink/65">{alcoholAnalytics.withAny}</span>.
+                {alcoholAnalytics.total === 0 ? (
+                  <span className="mt-1 block text-ink/40">Добавьте гостей — здесь появится статистика.</span>
+                ) : null}
               </p>
             </div>
             <div className="space-y-3.5">
@@ -278,8 +380,7 @@ export function AdminPage() {
                 )
               })}
             </div>
-          </section>
-        )}
+        </section>
 
         <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
           <h2 className="mb-2 text-xs font-semibold text-champagne sm:mb-3 sm:text-sm">
