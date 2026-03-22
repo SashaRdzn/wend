@@ -61,6 +61,7 @@ export function AdminPage() {
       }
       if (data.token) {
         localStorage.setItem(ADMIN_TOKEN_KEY, data.token)
+        setLoading(true)
         setToken(data.token)
       }
     } catch (err) {
@@ -84,11 +85,15 @@ export function AdminPage() {
       setLoading(false)
       return
     }
+    setLoading(true)
+    let cancelled = false
     const load = async () => {
       try {
         const res = await fetch(apiUrl('/api/guests'), { headers: getAuthHeaders() })
+        if (cancelled) return
         if (res.status === 401) {
           localStorage.removeItem(ADMIN_TOKEN_KEY)
+          setGuests([])
           setToken(null)
           return
         }
@@ -98,10 +103,13 @@ export function AdminPage() {
       } catch {
         /* сеть / сервер недоступны */
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     load()
+    return () => {
+      cancelled = true
+    }
   }, [token])
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -196,7 +204,7 @@ export function AdminPage() {
             </button>
             <Link
               to="/"
-              className="min-h-[44px] rounded-full border border-ink/12 px-4 py-2 text-xs text-ink/75 hover:bg-sand/40 active:scale-[0.98] sm:py-1.5"
+              className="min-h-[44px] rounded-full border border-ink/12 px-4 py-2 text-xs text-ink/75 hover:bg-sand/40 active:scale-[0.98] sm:py-3"
             >
               ← К открытому приглашению
             </Link>

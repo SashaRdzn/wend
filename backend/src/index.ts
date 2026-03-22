@@ -83,6 +83,12 @@ async function initDb() {
     if (!cols.some((c) => c.name === 'alcoholPreferences')) {
       await db.exec('ALTER TABLE guests ADD COLUMN alcoholPreferences TEXT')
     }
+    if (!cols.some((c) => c.name === 'rsvpAt')) {
+      await db.exec('ALTER TABLE guests ADD COLUMN rsvpAt TEXT')
+      await db.run(
+        `UPDATE guests SET rsvpAt = updatedAt WHERE rsvpAt IS NULL AND updatedAt != createdAt`,
+      )
+    }
   }
   return dbPromise
 }
@@ -138,11 +144,12 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
     const token = generateToken()
     const now = new Date().toISOString()
     const result = await db.run(
-      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, rsvpAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       name.trim(),
       token,
       'pending',
       0,
+      null,
       null,
       null,
       now,
@@ -167,15 +174,22 @@ app.get('/api/guests/by-token/:token', async (req, res) => {
   try {
     const db = await initDb()
     const guest = await db.get(
-      'SELECT id, name, token, alcoholPreferences FROM guests WHERE token = ?',
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences, rsvpAt FROM guests WHERE token = ?',
       req.params.token,
     )
     if (!guest) {
       return res.status(404).json({ error: 'Guest not found' })
     }
+    const rsvpAt = guest.rsvpAt as string | null | undefined
     res.json({
-      ...guest,
+      id: guest.id,
+      name: guest.name,
+      token: guest.token,
+      status: guest.status,
+      plusOne: !!(guest.plusOne as number),
+      comment: guest.comment as string | null,
       alcoholPreferences: parseAlcoholJson(guest.alcoholPreferences as string | null),
+      hasResponded: rsvpAt != null && rsvpAt !== '',
     })
   } catch (e) {
     console.error(e)
@@ -205,11 +219,12 @@ app.post('/api/rsvp/:token', async (req, res) => {
     }
     const now = new Date().toISOString()
     await db.run(
-      'UPDATE guests SET status = ?, plusOne = ?, comment = ?, alcoholPreferences = ?, updatedAt = ? WHERE token = ?',
+      'UPDATE guests SET status = ?, plusOne = ?, comment = ?, alcoholPreferences = ?, rsvpAt = ?, updatedAt = ? WHERE token = ?',
       status,
       plusOne ? 1 : 0,
       comment ?? null,
       alcoholJson,
+      now,
       now,
       req.params.token,
     )

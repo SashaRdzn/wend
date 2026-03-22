@@ -13,37 +13,51 @@ type Guest = {
   id: number
   name: string
   token: string
+  status?: 'accepted' | 'declined' | 'pending'
+  plusOne?: boolean
+  comment?: string | null
   alcoholPreferences?: AlcoholKey[]
+  hasResponded?: boolean
 }
 
 export function InvitePage() {
   const { token } = useParams<{ token: string }>()
   const [guest, setGuest] = useState<Guest | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
   const [status, setStatus] = useState<'accepted' | 'declined' | 'pending'>(
     'accepted',
   )
   const [plusOne, setPlusOne] = useState(false)
   const [comment, setComment] = useState('')
   const [alcohol, setAlcohol] = useState<Set<AlcoholKey>>(() => new Set())
-  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
+    if (!token) return
+    setEditing(false)
+    let cancelled = false
     const load = async () => {
-      if (!token) return
       try {
         const res = await fetch(apiUrl(`/api/guests/by-token/${token}`))
         if (!res.ok) throw new Error('Failed')
         const data = (await res.json()) as Guest
+        if (cancelled) return
         setGuest(data)
+        if (data.status) setStatus(data.status)
+        setPlusOne(!!data.plusOne)
+        setComment(typeof data.comment === 'string' ? data.comment : '')
         setAlcohol(new Set(parseAlcoholPreferences(data.alcoholPreferences)))
       } catch {
         /* сеть / сервер недоступны */
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
+    setLoading(true)
     load()
+    return () => {
+      cancelled = true
+    }
   }, [token])
 
   const toggleAlcohol = (key: AlcoholKey) => {
@@ -68,10 +82,13 @@ export function InvitePage() {
       body: JSON.stringify({ status, plusOne, comment, alcoholPreferences }),
     })
     if (!res.ok) return
-    setSubmitted(true)
+    setGuest((g) => (g ? { ...g, hasResponded: true } : g))
+    setEditing(false)
   }
 
   const alcoholDisabled = status === 'declined'
+  const hasResponded = guest?.hasResponded === true
+  const showForm = !hasResponded || editing
 
   if (loading) {
     return (
@@ -91,9 +108,43 @@ export function InvitePage() {
     )
   }
 
-  const rsvpSlot = submitted ? (
-    <div className="rounded-2xl border border-ink/10 bg-white/70 p-4 text-sm text-emerald-800/90 backdrop-blur sm:rounded-3xl sm:p-6">
-      Спасибо! Мы получили ваш ответ и обязательно всё учтём.
+  const statusSummary =
+    status === 'accepted'
+      ? 'Вы отметили, что придёте на праздник.'
+      : status === 'declined'
+        ? 'Вы отметили, что не сможете прийти.'
+        : 'Вы отметили, что пока не уверены.'
+
+  const rsvpSlot = !showForm ? (
+    <div className="space-y-4 rounded-2xl border border-ink/10 bg-white/70 p-4 text-sm text-ink/80 backdrop-blur sm:rounded-3xl sm:p-6">
+      <p className="text-emerald-800/90">Спасибо! Ваш ответ сохранён.</p>
+      <div className="space-y-1.5 text-[13px] leading-relaxed text-ink/75">
+        <p>{statusSummary}</p>
+        {status !== 'declined' && (
+          <p className="text-ink/65">
+            {plusOne ? 'Будете со спутником.' : 'Придёте без спутника.'}
+          </p>
+        )}
+        {status !== 'declined' && alcohol.size > 0 ? (
+          <p className="text-ink/65">
+            <span className="text-ink/45">Напитки: </span>
+            {[...alcohol].map((k) => ALCOHOL_LABELS[k]).join(', ')}
+          </p>
+        ) : null}
+        {comment.trim() ? (
+          <p className="border-t border-ink/10 pt-2 text-ink/60">
+            <span className="text-ink/45">Комментарий: </span>
+            {comment.trim()}
+          </p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-sage/45 bg-cream/90 px-5 py-2.5 text-sm font-medium text-moss transition hover:bg-sage/15 active:scale-[0.98] sm:w-auto"
+      >
+        Изменить ответ
+      </button>
     </div>
   ) : (
     <form
