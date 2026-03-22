@@ -27,26 +27,23 @@ function buildMonthCells(year: number, monthIndex: number): (number | null)[] {
   return cells
 }
 
-function HeartMark() {
+const HEART_PALE_PINK = '#f5c6d6'
+
+function HeartWithDay({ day }: { day: number }) {
   return (
-    <span className="calendar-heart mt-0.5 flex justify-center" aria-hidden>
+    <span className="calendar-heart relative inline-flex">
       <svg
-        className="h-5 w-5 drop-shadow-md sm:h-6 sm:w-6"
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-12 w-12 -translate-x-1/2 -translate-y-1/2 sm:h-[3.75rem] sm:w-[3.75rem]"
         viewBox="0 0 24 24"
         fill="none"
+        aria-hidden
       >
-        <defs>
-          <linearGradient id="weddingHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fda4af" />
-            <stop offset="55%" stopColor="#fb7185" />
-            <stop offset="100%" stopColor="#e11d48" />
-          </linearGradient>
-        </defs>
         <path
-          fill="url(#weddingHeartGrad)"
+          fill={HEART_PALE_PINK}
           d="M12 21s-7-4.35-9.5-9.5C.5 8.5 3 5 7 5c2 0 3.5 1.2 5 3 1.5-1.8 3-3 5-3 4 0 6.5 3.5 4.5 6.5C19 16.65 12 21 12 21z"
         />
       </svg>
+      <span className="relative z-[1] tabular-nums text-ink/55">{day}</span>
     </span>
   )
 }
@@ -84,12 +81,7 @@ export function WeddingCalendar() {
             }`}
           >
             {day === null ? null : day === weddingDay ? (
-              <div className="flex min-h-[3.25rem] flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-rose-50 via-white to-sage/20 px-2 py-1 ring-2 ring-rose-300/80 shadow-[0_6px_24px_rgba(251,113,133,0.22)] sm:min-h-[3.75rem] sm:px-3">
-                <span className="text-sm font-semibold tabular-nums text-moss sm:text-base">
-                  {day}
-                </span>
-                <HeartMark />
-              </div>
+              <HeartWithDay day={day} />
             ) : (
               <span className="tabular-nums text-ink/55">{day}</span>
             )}
