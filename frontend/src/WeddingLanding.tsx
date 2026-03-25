@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { FlipDigit } from './FlipDigit'
 import { OpeningHero } from './OpeningHero'
@@ -45,6 +45,61 @@ const NAV_LINKS = [
   { href: '#rsvp', label: 'RSVP' },
 ]
 
+type DayProgramItem = {
+  time: string
+  title: string
+  text: string
+}
+
+// Выбрали самые важные моменты из общего плана.
+const DAY_PROGRAM: DayProgramItem[] = [
+  {
+    time: '14:00-15:00',
+    title: 'Фото сессия',
+    text: 'Фото с фотографом.',
+  },
+  {
+    time: '15:00-15:30',
+    title: 'Встреча гостей',
+    text: 'Фуршет и фото-зона.',
+  },
+  {
+    time: '15:40-16:00',
+    title: 'Выход пары',
+    text: 'Выход и регистрация.',
+  },
+  {
+    time: '16:00',
+    title: 'Начало церемонии',
+    text: 'Церемония начинается.',
+  },
+  {
+    time: '17:50-18:00',
+    title: 'Слайд-шоу и первый танец',
+    text: 'Слайд-шоу и первый танец.',
+  },
+  {
+    time: '20:00-20:20',
+    title: 'Танец с отцом и торт',
+    text: 'Танец и торт родителям.',
+  },
+  {
+    time: '20:50-21:30',
+    title: 'Танцевальный марафон',
+    text: 'Дискотека и марафон.',
+  },
+]
+
+type TimelinePoint = { x: number; y: number }
+
+function clamp(v: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, v))
+}
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t
+}
+
 export type WeddingLandingProps = {
   guestName?: string | null
   showOpenInviteLink?: boolean
@@ -58,6 +113,141 @@ export function WeddingLanding({
 }: WeddingLandingProps) {
   const countdown = useCountdown(WEDDING_DATE)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const scheduleWrapRef = useRef<HTMLDivElement | null>(null)
+  const scheduleHeartRef = useRef<HTMLSpanElement | null>(null)
+  const scheduleGeomRef = useRef<{
+    w: number
+    h: number
+    padY: number
+    innerH: number
+    stopPoints: TimelinePoint[]
+    stopTs: number[]
+    curvePathD: string
+  } | null>(null)
+
+  const [scheduleGeom, setScheduleGeom] = useState<{
+    w: number
+    h: number
+    padY: number
+    innerH: number
+    stopPoints: TimelinePoint[]
+    stopTs: number[]
+    curvePathD: string
+  } | null>(null)
+
+  useEffect(() => {
+    let raf = 0
+
+    const pointAtT = (tRaw: number, geom: NonNullable<typeof scheduleGeomRef.current>) => {
+      const t = clamp(tRaw, 0, 1)
+      const N = geom.stopTs.length
+      const segCount = Math.max(1, N - 1)
+      const segF = t * segCount
+      const segIdx = clamp(Math.floor(segF), 0, segCount - 1)
+      const t0 = geom.stopTs[segIdx]
+      const t1 = geom.stopTs[segIdx + 1] ?? 1
+      const denom = Math.max(1e-6, t1 - t0)
+      const u = clamp((t - t0) / denom, 0, 1)
+      const ease = (1 - Math.cos(Math.PI * u)) / 2
+      const x = lerp(geom.stopPoints[segIdx].x, geom.stopPoints[segIdx + 1]?.x ?? geom.stopPoints[segIdx].x, ease)
+      return { x, y: geom.padY + geom.innerH * t }
+    }
+
+    const recalc = () => {
+      const wrap = scheduleWrapRef.current
+      if (!wrap) return
+
+      const rect = wrap.getBoundingClientRect()
+      const w = rect.width
+      const h = rect.height
+      if (w <= 0 || h <= 0) return
+
+      // Безопасные отступы сверху/снизу, чтобы сердечко и подписи не обрезались
+      // (особенно заметно при overflow-hidden).
+      const padY = Math.min(48, Math.max(24, h * 0.035))
+      const innerH = Math.max(1, h - padY * 2)
+
+      const N = DAY_PROGRAM.length
+      const stopTs = Array.from({ length: N }, (_, i) => (N <= 1 ? 0 : i / (N - 1)))
+      // Центрируем "змейку" по ширине блока.
+      const leftX = w * 0.36
+      const rightX = w * 0.64
+      const stopPoints = stopTs.map((t, i) => ({
+        x: i % 2 === 0 ? leftX : rightX,
+        y: padY + innerH * t,
+      }))
+
+      // Long enough sampling for a smooth line.
+      const samples = Math.max(180, 30 * (N - 1))
+      const curvePoints: TimelinePoint[] = []
+      for (let s = 0; s < samples; s++) {
+        const t = samples <= 1 ? 0 : s / (samples - 1)
+        curvePoints.push(pointAtT(t, { w, h, padY, innerH, stopPoints, stopTs, curvePathD: '' }))
+      }
+
+      const curvePathD = curvePoints
+        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+        .join(' ')
+
+      const geom = { w, h, padY, innerH, stopPoints, stopTs, curvePathD }
+      scheduleGeomRef.current = geom
+      setScheduleGeom(geom)
+
+      if (scheduleHeartRef.current) {
+        scheduleHeartRef.current.style.left = `${stopPoints[0]?.x ?? 0}px`
+        scheduleHeartRef.current.style.top = `${stopPoints[0]?.y ?? 0}px`
+      }
+    }
+
+    const onScroll = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(() => {
+        raf = 0
+        const geom = scheduleGeomRef.current
+        const wrap = scheduleWrapRef.current
+        const heartEl = scheduleHeartRef.current
+        if (!geom || !wrap || !heartEl) return
+
+        const rect = wrap.getBoundingClientRect()
+        if (geom.innerH <= 0) return
+
+        const viewportCenterY = window.innerHeight / 2
+        const tRaw = (viewportCenterY - rect.top - geom.padY) / geom.innerH
+        const tClamped = clamp(tRaw, 0, 1)
+
+        // Snap to the nearest stop when close.
+        let best = geom.stopTs[0]
+        let bestDist = Math.abs(tClamped - best)
+        for (let i = 1; i < geom.stopTs.length; i++) {
+          const d = Math.abs(tClamped - geom.stopTs[i])
+          if (d < bestDist) {
+            bestDist = d
+            best = geom.stopTs[i]
+          }
+        }
+        const SNAP_EPS = 0.02
+        const t = bestDist <= SNAP_EPS ? best : tClamped
+
+        const p = pointAtT(t, geom)
+        heartEl.style.left = `${p.x}px`
+        heartEl.style.top = `${p.y}px`
+      })
+    }
+
+    // Initial.
+    recalc()
+    onScroll()
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', recalc)
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', recalc)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
+  }, [])
 
   const openLinkClass =
     'whitespace-nowrap text-xs font-medium text-ink/55 transition-colors hover:text-ink'
@@ -401,37 +591,105 @@ export function WeddingLanding({
               Как пройдёт день
             </h2>
 
-            <div className="grid gap-3 text-[11px] text-ink/75 sm:gap-4 sm:text-xs lg:grid-cols-3">
-              {[
-                {
-                  time: '15:00',
-                  title: 'Сбор гостей',
-                  text: 'Welcome‑drinks, лёгкие закуски и живая музыка в саду.',
-                },
-                {
-                  time: '16:00',
-                  title: 'Церемония',
-                  text: 'Торжественная церемония под открытым небом.',
-                },
-                {
-                  time: '17:30',
-                  title: 'Ужин и праздник',
-                  text: 'Ужин, тосты, танцы и много сюрпризов.',
-                },
-              ].map((item) => (
-                <div
-                  key={item.time}
-                  className="rounded-2xl border border-ink/10 bg-white/50 p-4 backdrop-blur"
-                >
-                  <div className="text-[11px] uppercase tracking-[0.22em] text-moss/75">
-                    {item.time}
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-champagne">
-                    {item.title}
-                  </div>
-                  <p className="mt-2">{item.text}</p>
-                </div>
-              ))}
+            <div className="mx-auto w-full max-w-3xl">
+              <div
+                ref={scheduleWrapRef}
+                className="relative overflow-hidden h-[980px] sm:h-[1080px] lg:h-[1240px]"
+              >
+                {scheduleGeom ? (
+                  <>
+                    <div className="pointer-events-none absolute inset-0 z-0">
+                      <svg
+                        className="h-full w-full"
+                        viewBox={`0 0 ${Math.max(1, scheduleGeom.w)} ${Math.max(1, scheduleGeom.h)}`}
+                        preserveAspectRatio="none"
+                        aria-hidden
+                      >
+                        <path
+                          d={scheduleGeom.curvePathD}
+                          fill="none"
+                          stroke="rgba(107, 112, 92, 0.22)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+
+                    <span
+                      ref={scheduleHeartRef}
+                      className="calendar-heart absolute z-10 -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        left: scheduleGeom.stopPoints[0]?.x ?? 0,
+                        top: scheduleGeom.stopPoints[0]?.y ?? 0,
+                        width: 46,
+                        height: 46,
+                      }}
+                      aria-hidden
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+                        <path
+                          fill="#f5c6d6"
+                          d="M12 21s-7-4.35-9.5-9.5C.5 8.5 3 5 7 5c2 0 3.5 1.2 5 3 1.5-1.8 3-3 5-3 4 0 6.5 3.5 4.5 6.5C19 16.65 12 21 12 21z"
+                        />
+                      </svg>
+                    </span>
+
+                    <div className="absolute inset-0 z-10">
+                      {/*
+                        Блоки времени стоят по “змейке”, но их нужно ограничить внутри
+                        границ экрана/контейнера, иначе на узких ширинах они могут
+                        торчать за края или цеплять выпуклости SVG-линии.
+                      */}
+                      {(() => {
+                        const safeMargin = Math.max(10, scheduleGeom.w * 0.04)
+                        const availableW = Math.max(0, scheduleGeom.w - safeMargin * 2)
+                        const blockW = Math.min(210, availableW)
+                        const inset = Math.min(22, Math.max(14, scheduleGeom.w * 0.035))
+
+                        return (
+                          <>
+                            {DAY_PROGRAM.map((item, i) => {
+                              const p = scheduleGeom.stopPoints[i]
+                              const pointIsLeft = i % 2 === 0
+                              // Ставим текст по "внутренней" стороне змейки:
+                              // для левой точки — справа, для правой — слева.
+                              const placeOnLeft = !pointIsLeft
+
+                              // Якорим блок на стороне линии и затем зажимаем,
+                              // чтобы весь блок гарантированно помещался в контейнер.
+                              const anchorX = (p?.x ?? 0) + (placeOnLeft ? -inset : inset)
+                              const left = placeOnLeft
+                                ? clamp(anchorX, safeMargin + blockW, scheduleGeom.w - safeMargin)
+                                : clamp(anchorX, safeMargin, scheduleGeom.w - safeMargin - blockW)
+
+                              return (
+                                <div
+                                  key={`${item.time}-${i}`}
+                                  className="absolute text-center"
+                                  style={{
+                                    left,
+                                    top: p?.y ?? 0,
+                                    width: blockW,
+                                    transform: placeOnLeft ? 'translate(-100%, -50%)' : 'translate(0, -50%)',
+                                  }}
+                                >
+                                  <div className="text-[15px] sm:text-[16px] font-display font-semibold text-champagne/85">
+                                    {item.time}
+                                  </div>
+                                  <div className="mt-1 text-[11px] sm:text-[12px] font-medium leading-snug text-ink/65">
+                                    {item.title} · {item.text}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
           </section>
 
