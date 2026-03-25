@@ -7,11 +7,15 @@ import {
   VENUE_ADDRESS_LINES,
   VENUE_LAT,
   VENUE_LON,
+  VENUE_2GIS_GEO_ID,
   WEDDING_DATE,
 } from './weddingConstants'
 
-const YANDEX_MAPS_ROUTE = `https://yandex.ru/maps/?pt=${VENUE_LON},${VENUE_LAT}&z=16&l=map`
-const YANDEX_EMBED_SRC = `https://yandex.ru/map-widget/v1/?ll=${VENUE_LON}%2C${VENUE_LAT}&z=16&l=map&pt=${VENUE_LON}%2C${VENUE_LAT}%2Cpm2rdm`
+const TWO_GIS_ZOOM = 16
+const TWO_GIS_MAP_URL = `https://2gis.kg/bishkek?m=${VENUE_LON}%2C${VENUE_LAT}%2F${TWO_GIS_ZOOM}`
+// 2ГИС отдаёт отдельную страницу с картой; в некоторых браузерах/настройках iframe может быть заблокирован.
+const TWO_GIS_EMBED_SRC = TWO_GIS_MAP_URL
+const TWO_GIS_ROUTE_URL = `https://2gis.kg/bishkek/directions/points/%7C${VENUE_LON}%2C${VENUE_LAT}%3B${VENUE_2GIS_GEO_ID}`
 
 function useCountdown(to: Date) {
   const [left, setLeft] = useState({ d: 0, h: 0, m: 0, s: 0 })
@@ -352,15 +356,17 @@ export function WeddingLanding({
                 Место проведения
               </h2>
               <p className="mt-2 text-xs text-ink/60 sm:text-sm">
-                Соберёмся за городом — ориентир на карте и адрес ниже.
+                Ориентир на карте и адрес ниже.
               </p>
             </div>
             <div className="relative overflow-hidden rounded-3xl border border-ink/10 bg-sand/25 shadow-sm">
               <iframe
                 title="Карта места проведения"
-                src={YANDEX_EMBED_SRC}
+                src={TWO_GIS_EMBED_SRC}
                 className="h-64 w-full border-0 sm:h-80 lg:h-[22rem]"
                 allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
             <div className="rounded-2xl border border-ink/10 bg-white/60 px-4 py-4 text-sm text-ink/80 sm:rounded-3xl sm:px-6 sm:py-5">
@@ -376,7 +382,7 @@ export function WeddingLanding({
               </address>
             </div>
             <a
-              href={YANDEX_MAPS_ROUTE}
+              href={TWO_GIS_ROUTE_URL}
               target="_blank"
               rel="noreferrer noopener"
               className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-4 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:px-5"
