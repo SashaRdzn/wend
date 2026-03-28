@@ -3,14 +3,19 @@ import cors, { type CorsOptions } from 'cors'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
+import sqlite3 from 'sqlite3'
+import { open } from 'sqlite'
 import crypto from 'crypto'
 import { logger } from './logger'
 import { requestLogMiddleware } from './httpLog'
 import { config as loadEnv } from 'dotenv'
-import { connectMongo, getGuestsCollection, getNextGuestId } from './mongoDb'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 loadEnv({ path: path.join(__dirname, '../.env') })
+
+const SQLITE_FILE = process.env.SQLITE_PATH
+  ? path.resolve(process.env.SQLITE_PATH)
+  : path.join(__dirname, '..', 'wedding.sqlite')
 
 const app = express()
 /** На Render за прокси — корректный req.ip / X-Forwarded-For */
@@ -74,6 +79,41 @@ app.use(cors(corsOptions))
 app.use(express.json({ limit: '512kb' }))
 app.use(requestLogMiddleware)
 
+let dbPromise: ReturnType<typeof open<sqlite3.Database, sqlite3.Statement>>
+
+async function initDb() {
+  if (!dbPromise) {
+    dbPromise = open({
+      filename: SQLITE_FILE,
+      driver: sqlite3.Database,
+    })
+    const db = await dbPromise
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS guests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL DEFAULT 'pending',
+        plusOne INTEGER NOT NULL DEFAULT 0,
+        comment TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      );
+    `)
+    const cols = await db.all<{ name: string }>('PRAGMA table_info(guests)')
+    if (!cols.some((c) => c.name === 'alcoholPreferences')) {
+      await db.exec('ALTER TABLE guests ADD COLUMN alcoholPreferences TEXT')
+    }
+    if (!cols.some((c) => c.name === 'rsvpAt')) {
+      await db.exec('ALTER TABLE guests ADD COLUMN rsvpAt TEXT')
+      await db.run(
+        `UPDATE guests SET rsvpAt = updatedAt WHERE rsvpAt IS NULL AND updatedAt != createdAt`,
+      )
+    }
+  }
+  return dbPromise
+}
+
 function generateToken() {
   return crypto.randomBytes(8).toString('hex')
 }
@@ -100,17 +140,15 @@ app.post('/api/auth/logout', (req, res) => {
 
 app.get('/api/guests', authMiddleware, async (_req, res) => {
   try {
-    const col = getGuestsCollection()
-    const guests = await col.find({}).sort({ id: 1 }).toArray()
+    const db = await initDb()
+    const guests = await db.all(
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests ORDER BY createdAt ASC',
+    )
     res.json(
       guests.map((g) => ({
-        id: g.id,
-        name: g.name,
-        token: g.token,
-        status: g.status,
+        ...g,
         plusOne: !!g.plusOne,
-        comment: g.comment,
-        alcoholPreferences: parseAlcoholJson(g.alcoholPreferences),
+        alcoholPreferences: parseAlcoholJson(g.alcoholPreferences as string | null),
       })),
     )
   } catch (e) {
@@ -128,31 +166,29 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Name is required' })
   }
   try {
-    const col = getGuestsCollection()
-    const id = await getNextGuestId()
+    const db = await initDb()
     const token = generateToken()
     const now = new Date().toISOString()
-    const doc = {
-      id,
-      name: name.trim(),
+    const result = await db.run(
+      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, rsvpAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      name.trim(),
       token,
-      status: 'pending',
-      plusOne: 0,
-      comment: null as string | null,
-      alcoholPreferences: null as string | null,
-      rsvpAt: null as string | null,
-      createdAt: now,
-      updatedAt: now,
-    }
-    await col.insertOne(doc)
+      'pending',
+      0,
+      null,
+      null,
+      null,
+      now,
+      now,
+    )
+    const created = await db.get(
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests WHERE id = ?',
+      result.lastID,
+    )
     res.status(201).json({
-      id: doc.id,
-      name: doc.name,
-      token: doc.token,
-      status: doc.status,
-      plusOne: false,
-      comment: doc.comment,
-      alcoholPreferences: parseAlcoholJson(doc.alcoholPreferences),
+      ...created,
+      plusOne: !!created.plusOne,
+      alcoholPreferences: parseAlcoholJson(created.alcoholPreferences as string | null),
     })
   } catch (e) {
     logger.error('api_guests_create_failed', {
@@ -169,9 +205,9 @@ app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Invalid id' })
   }
   try {
-    const col = getGuestsCollection()
-    const result = await col.deleteOne({ id })
-    if (result.deletedCount === 0) {
+    const db = await initDb()
+    const result = await db.run('DELETE FROM guests WHERE id = ?', id)
+    if (result.changes === 0) {
       return res.status(404).json({ error: 'Guest not found' })
     }
     res.json({ ok: true })
@@ -187,20 +223,23 @@ app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
 
 app.get('/api/guests/by-token/:token', async (req, res) => {
   try {
-    const col = getGuestsCollection()
-    const guest = await col.findOne({ token: req.params.token })
+    const db = await initDb()
+    const guest = await db.get(
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences, rsvpAt FROM guests WHERE token = ?',
+      req.params.token,
+    )
     if (!guest) {
       return res.status(404).json({ error: 'Guest not found' })
     }
-    const rsvpAt = guest.rsvpAt
+    const rsvpAt = guest.rsvpAt as string | null | undefined
     res.json({
       id: guest.id,
       name: guest.name,
       token: guest.token,
       status: guest.status,
-      plusOne: !!guest.plusOne,
-      comment: guest.comment,
-      alcoholPreferences: parseAlcoholJson(guest.alcoholPreferences),
+      plusOne: !!(guest.plusOne as number),
+      comment: guest.comment as string | null,
+      alcoholPreferences: parseAlcoholJson(guest.alcoholPreferences as string | null),
       hasResponded: rsvpAt != null && rsvpAt !== '',
     })
   } catch (e) {
@@ -224,28 +263,22 @@ app.post('/api/rsvp/:token', async (req, res) => {
   }
   const alcoholJson = normalizeAlcoholPreferences(alcoholPreferences)
   try {
-    const col = getGuestsCollection()
-    const existing = await col.findOne({ token: req.params.token }, { projection: { _id: 1 } })
+    const db = await initDb()
+    const existing = await db.get('SELECT id FROM guests WHERE token = ?', req.params.token)
     if (!existing) {
       return res.status(404).json({ error: 'Guest not found' })
     }
     const now = new Date().toISOString()
-    const result = await col.updateOne(
-      { token: req.params.token },
-      {
-        $set: {
-          status,
-          plusOne: plusOne ? 1 : 0,
-          comment: comment ?? null,
-          alcoholPreferences: alcoholJson,
-          rsvpAt: now,
-          updatedAt: now,
-        },
-      },
+    await db.run(
+      'UPDATE guests SET status = ?, plusOne = ?, comment = ?, alcoholPreferences = ?, rsvpAt = ?, updatedAt = ? WHERE token = ?',
+      status,
+      plusOne ? 1 : 0,
+      comment ?? null,
+      alcoholJson,
+      now,
+      now,
+      req.params.token,
     )
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ error: 'Guest not found' })
-    }
     res.json({ ok: true })
   } catch (e) {
     logger.error('api_rsvp_save_failed', {
@@ -296,12 +329,7 @@ process.on('uncaughtException', (err: Error) => {
 })
 
 async function main() {
-  const uri = process.env.MONGODB_URI?.trim()
-  if (!uri) {
-    logger.error('missing_env', { key: 'MONGODB_URI' })
-    process.exit(1)
-  }
-  await connectMongo(uri)
+  await initDb()
 
   app.listen(PORT, HOST, () => {
     logger.info('server_ready', {
@@ -310,8 +338,7 @@ async function main() {
       host: HOST,
       node: process.version,
       env: process.env.NODE_ENV ?? 'development',
-      db: process.env.MONGODB_DB_NAME || 'wend',
-      mongo: true,
+      sqlite: path.basename(SQLITE_FILE),
       spa: serveSpa,
     })
   })
