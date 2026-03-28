@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+// import { Link } from 'react-router-dom'
 import { FlipDigit } from './FlipDigit'
 import { OpeningHero } from './OpeningHero'
 import { WeddingCalendar } from './WeddingCalendar'
@@ -116,7 +116,6 @@ export type WeddingLandingProps = {
 
 export function WeddingLanding({
   guestName,
-  showOpenInviteLink,
   rsvpSlot,
 }: WeddingLandingProps) {
   const countdown = useCountdown(WEDDING_DATE)
@@ -241,7 +240,6 @@ export function WeddingLanding({
       })
     }
 
-    // Initial.
     recalc()
     onScroll()
 
@@ -255,8 +253,8 @@ export function WeddingLanding({
     }
   }, [])
 
-  const openLinkClass =
-    'whitespace-nowrap text-xs font-medium text-ink/55 transition-colors hover:text-ink'
+  // const openLinkClass =
+  //   'whitespace-nowrap text-xs font-medium text-ink/55 transition-colors hover:text-ink'
 
   return (
     <>
