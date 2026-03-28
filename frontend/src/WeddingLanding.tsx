@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 // import { Link } from 'react-router-dom'
 import { FlipDigit } from './FlipDigit'
 import { OpeningHero } from './OpeningHero'
@@ -20,6 +27,62 @@ import jointPhoto8 from './assets/pictures/joint_photo8.jpg'
 import jointPhoto9 from './assets/pictures/joint_photo9.jpg'
 import jointPhoto10 from './assets/pictures/joint_photo10.jpg'
 import jointPhoto11 from './assets/pictures/joint_photo11.jpg'
+
+import dressCodeMain from './assets/pictures/dress.jpg'
+import dressCode1 from './assets/pictures/dress1.jpg'
+// import dressCode2 from './assets/pictures/dress2.jpg'
+import dressCode3 from './assets/pictures/dress3.jpg'
+import dressCode4 from './assets/pictures/dress4.jpg'
+import dressCode5 from './assets/pictures/dress5.jpg'
+import dressCode6 from './assets/pictures/dress6.jpg'
+import dressCode7 from './assets/pictures/dress7.jpg'
+import dressCode8 from './assets/pictures/dress8.jpg'
+import dressCode9 from './assets/pictures/dress9.jpg'
+import dressCode10 from './assets/pictures/dress10.jpg'
+import dressCode11 from './assets/pictures/dress11.jpg'
+import dressFabric12 from './assets/pictures/dress12.jpg'
+import dressFabric13 from './assets/pictures/dress13.jpg'
+import dressFabric14 from './assets/pictures/dress14.jpg'
+import dressFabric15 from './assets/pictures/dress15.jpg'
+import dressFabric16 from './assets/pictures/dress16.jpg'
+import dressCode17 from './assets/pictures/dress17.jpg'
+import dressCode18 from './assets/pictures/dress18.jpg'
+import dressCode19 from './assets/pictures/dress19.jpg'
+import dressCode20 from './assets/pictures/dress20.jpg'
+import dressCode21 from './assets/pictures/dress21.jpg'
+
+
+const DRESS_CODE_PALETTE: {
+  fabric: string
+  color: string
+  label: string
+}[] = [
+  { fabric: dressFabric12, color: '#3f3a32', label: 'Тёмный' },
+  { fabric: dressFabric13, color: '#9a867c', label: 'Тауп' },
+  { fabric: dressFabric14, color: '#6b7350', label: 'Олива' },
+  { fabric: dressFabric15, color: '#c4d4b8', label: 'Мята' },
+  { fabric: dressFabric16, color: '#f2ebe0', label: 'Крем' },
+]
+
+const DRESS_CODE_GALLERY = [
+  dressCodeMain,
+  dressCode1,
+  // dressCode2,
+  dressCode3,
+  dressCode4,
+  dressCode5,
+  dressCode6,
+  dressCode7,
+  dressCode8,
+  dressCode9,
+  dressCode10,
+  dressCode11,
+  dressCode17,
+  dressCode18,
+  dressCode19,
+  dressCode20,
+  dressCode21,
+] as const
 
 const GALLERY_STRIP_IMAGES = [
   jointPhoto11,
@@ -141,6 +204,37 @@ export function WeddingLanding({
     curvePathD: string
   } | null>(null)
 
+  const dressCodeSectionRef = useRef<HTMLElement | null>(null)
+  const [dressCodeInView, setDressCodeInView] = useState(false)
+
+  useLayoutEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDressCodeInView(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const el = dressCodeSectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        // Позже по скроллу: заметная часть секции уже в «живой» зоне экрана (не в самом низу вьюпорта).
+        if (entry.intersectionRatio >= 0.14) {
+          setDressCodeInView(true)
+          io.disconnect()
+        }
+      },
+      {
+        threshold: [0, 0.05, 0.1, 0.14, 0.2, 0.3, 0.45, 0.6],
+        rootMargin: '0px 0px -32% 0px',
+      }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
   useEffect(() => {
     let raf = 0
 
@@ -168,14 +262,11 @@ export function WeddingLanding({
       const h = rect.height
       if (w <= 0 || h <= 0) return
 
-      // Безопасные отступы сверху/снизу, чтобы сердечко и подписи не обрезались
-      // (особенно заметно при overflow-hidden).
       const padY = Math.min(48, Math.max(24, h * 0.035))
       const innerH = Math.max(1, h - padY * 2)
 
       const N = DAY_PROGRAM.length
       const stopTs = Array.from({ length: N }, (_, i) => (N <= 1 ? 0 : i / (N - 1)))
-      // Центрируем "змейку" по ширине блока.
       const leftX = w * 0.36
       const rightX = w * 0.64
       const stopPoints = stopTs.map((t, i) => ({
@@ -183,7 +274,6 @@ export function WeddingLanding({
         y: padY + innerH * t,
       }))
 
-      // Long enough sampling for a smooth line.
       const samples = Math.max(180, 30 * (N - 1))
       const curvePoints: TimelinePoint[] = []
       for (let s = 0; s < samples; s++) {
@@ -387,6 +477,48 @@ export function WeddingLanding({
           </main>
 
           <section
+            id="story"
+            className="mt-10 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-12 sm:pt-12 lg:mt-14"
+          >
+            <div className="mx-auto max-w-2xl space-y-4 text-xs text-ink/65">
+              <div className="rounded-3xl border border-ink/10 bg-white/50 p-4 backdrop-blur">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-ink/45">
+                  Таймлайн
+                </p>
+                <ul className="mt-3 space-y-3">
+                  <li className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage shadow-[0_0_8px_rgba(163,177,138,0.65)]" />
+                    <div>
+                      <p className="text-xs font-medium text-moss">
+                        2019 · Первая встреча
+                      </p>
+                      <p>Кофейня, случайный плейлист и разговор до закрытия.</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
+                    <div>
+                      <p className="text-xs font-medium text-moss">
+                        2021 · Путешествия
+                      </p>
+                      <p>Горы, море и понимание, что мы — команда.</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
+                    <div>
+                      <p className="text-xs font-medium text-moss">
+                        2025 · Предложение
+                      </p>
+                      <p>Балкон, огни города и &quot;да&quot;.</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section
             id="calendar"
             className="mt-10 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-12 sm:pt-12 lg:mt-14"
           >
@@ -442,48 +574,6 @@ export function WeddingLanding({
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
             </a>
-          </section>
-
-          <section
-            id="story"
-            className="mt-12 grid gap-8 border-t border-ink/10 pt-10 sm:mt-16 sm:pt-12 lg:mt-20 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-10 lg:pt-12"
-          >
-            <div className="space-y-4 text-xs text-ink/65">
-              <div className="rounded-3xl border border-ink/10 bg-white/50 p-4 backdrop-blur">
-                <p className="text-[10px] uppercase tracking-[0.24em] text-ink/45">
-                  Таймлайн
-                </p>
-                <ul className="mt-3 space-y-3">
-                  <li className="flex gap-3">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage shadow-[0_0_8px_rgba(163,177,138,0.65)]" />
-                    <div>
-                      <p className="text-xs font-medium text-moss">
-                        2019 · Первая встреча
-                      </p>
-                      <p>Кофейня, случайный плейлист и разговор до закрытия.</p>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
-                    <div>
-                      <p className="text-xs font-medium text-moss">
-                        2021 · Путешествия
-                      </p>
-                      <p>Горы, море и понимание, что мы — команда.</p>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
-                    <div>
-                      <p className="text-xs font-medium text-moss">
-                        2025 · Предложение
-                      </p>
-                      <p>Балкон, огни города и &quot;да&quot;.</p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
           </section>
 
           <section
@@ -592,6 +682,85 @@ export function WeddingLanding({
                     </div>
                   </>
                 ) : null}
+              </div>
+            </div>
+          </section>
+
+          <section
+            ref={dressCodeSectionRef}
+            id="dress-code"
+            className={`dress-code mt-12 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-16 sm:pt-12${dressCodeInView ? ' dress-code--visible' : ''}`}
+          >
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink/45 sm:text-xs sm:tracking-[0.32em]">
+                Дресс-код
+              </p>
+              <h2 className="mt-3 font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
+                Как одеться
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-ink/75 sm:text-base">
+                Для нас главное — ваше присутствие! Но мы будем рады, если в своих нарядах вы
+                поддержите цветовую гамму и общую стилистику свадьбы: натуральные оттенки, мягкий
+                блеск атласа или шёлка, без ярких неоновых акцентов.
+              </p>
+            </div>
+
+            <div className="mx-auto mt-8 max-w-xl">
+              <p className="text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ink/50">
+                Цвет и ткань
+              </p>
+              <p className="mt-2 text-center text-xs text-ink/60 sm:text-sm">
+                Сверху — фактура ткани, снизу — оттенок палитры.
+              </p>
+              <div className="mt-6 grid grid-cols-5 gap-2 sm:mt-8 sm:gap-4">
+                {DRESS_CODE_PALETTE.map((item, step) => (
+                  <div
+                    key={item.label}
+                    className="dress-code-reveal-target flex flex-col items-center gap-2 sm:gap-2.5"
+                    style={{ '--reveal-step': step } as CSSProperties}
+                  >
+                    <div className="dress-code-swatch ring-1 ring-ink/10">
+                      <img
+                        src={item.fabric}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div
+                      className="dress-code-swatch ring-1 ring-ink/10"
+                      style={{ backgroundColor: item.color }}
+                      aria-hidden
+                    />
+                    <span className="max-w-[4.5rem] text-center text-[9px] leading-tight text-ink/55 sm:max-w-none sm:text-[10px]">
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-auto mt-10 max-w-3xl sm:mt-12">
+              <p className="text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ink/50">
+                Вдохновение
+              </p>
+              <div className="dress-code-gallery mt-4 grid grid-cols-2 gap-2 sm:gap-3">
+                {DRESS_CODE_GALLERY.map((src, i) => (
+                  <div
+                    key={`dress-gallery-${i}`}
+                    className="dress-code-gallery-cell dress-code-reveal-target overflow-hidden rounded-xl shadow-md shadow-ink/5 sm:rounded-2xl"
+                    style={{ '--reveal-step': DRESS_CODE_PALETTE.length + i } as CSSProperties}
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      className="dress-code-gallery-img h-auto w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </section>

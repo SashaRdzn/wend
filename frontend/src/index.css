@@ -83,6 +83,53 @@ body {
   image-rendering: auto;
 }
 
+.dress-code-swatch {
+  width: 100%;
+  max-width: 3.25rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-inline: auto;
+}
+@media (min-width: 640px) {
+  .dress-code-swatch {
+    max-width: 4.25rem;
+  }
+}
+
+/* Дресс-код: плавное появление при скролле (см. секция #dress-code) */
+.dress-code-reveal-target {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-property: opacity, transform;
+  transition-duration: 1.05s;
+  transition-timing-function: cubic-bezier(0.2, 0.85, 0.25, 1);
+  transition-delay: calc(var(--reveal-step, 0) * 0.072s);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dress-code:not(.dress-code--visible) .dress-code-reveal-target {
+    opacity: 0;
+    transform: translate3d(0, 2.65rem, 0) scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dress-code-reveal-target {
+    transition: none;
+  }
+}
+
+.dress-code-gallery-img {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  image-rendering: auto;
+  vertical-align: middle;
+}
+
 .countdown-block {
   transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
