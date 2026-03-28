@@ -17,17 +17,14 @@ import jointPhoto5 from './assets/pictures/joint_photo5.jpg'
 import jointPhoto6 from './assets/pictures/joint_photo6.jpg'
 import jointPhoto7 from './assets/pictures/joint_photo7.jpg'
 import jointPhoto8 from './assets/pictures/joint_photo8.jpg'
+import jointPhoto9 from './assets/pictures/joint_photo9.jpg'
+import jointPhoto10 from './assets/pictures/joint_photo10.jpg'
+import jointPhoto11 from './assets/pictures/joint_photo11.jpg'
 
-/** Все локальные кадры для бегущей ленты (без внешних URL) */
 const GALLERY_STRIP_IMAGES = [
-  jointPhoto1,
-  jointPhoto2,
-  jointPhoto3,
-  jointPhoto4,
-  jointPhoto5,
-  jointPhoto6,
-  jointPhoto7,
-  jointPhoto8,
+  jointPhoto11,
+  jointPhoto10,
+  jointPhoto9,
 ] as const
 
 const YANDEX_MAP_ZOOM = 16
@@ -277,11 +274,6 @@ export function WeddingLanding({
                 ) : null}
               </span>
             </div>
-            {showOpenInviteLink ? (
-              <Link to="/" className={openLinkClass}>
-                Открытое приглашение
-              </Link>
-            ) : null}
           </header>
 
           <main className="mt-6 flex flex-col gap-10 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] sm:mt-8 sm:gap-16 lg:mt-10">
@@ -458,21 +450,6 @@ export function WeddingLanding({
             id="story"
             className="mt-12 grid gap-8 border-t border-ink/10 pt-10 sm:mt-16 sm:pt-12 lg:mt-20 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-10 lg:pt-12"
           >
-            {/* <div className="min-w-0 space-y-4 sm:space-y-6">
-              <h2 className="font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
-                Наша история
-              </h2>
-              <p className="text-sm text-ink/75">
-                
-              </p>
-              <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
-              </div>
-              <p className="text-sm text-ink/65">
-                В этот день нам особенно хочется разделить радость с теми, кто искренне рад за нас.
-                Спасибо, что вы рядом.
-              </p>
-            </div> */}
-
             <div className="space-y-4 text-xs text-ink/65">
               <div className="rounded-3xl border border-ink/10 bg-white/50 p-4 backdrop-blur">
                 <p className="text-[10px] uppercase tracking-[0.24em] text-ink/45">
