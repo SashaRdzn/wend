@@ -1,5 +1,5 @@
 import dns from 'node:dns'
-import { MongoClient, ServerApiVersion, type Collection, type Db } from 'mongodb'
+import { MongoClient, type Collection, type Db } from 'mongodb'
 
 /** Atlas + Node на части хостингов (Render и др.) ломают TLS при приоритете IPv6 — см. MongoDB-7556. */
 dns.setDefaultResultOrder('ipv4first')
@@ -35,14 +35,8 @@ function mongoClientOptions() {
     socketTimeoutMS: 45_000,
     maxPoolSize: 10,
     retryWrites: true,
-    /** Явный IPv4 — часто снимает TLS «alert 80» с Node 20–22 + OpenSSL 3 + Atlas. */
-    family: 4 as const,
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: false,
-      deprecationErrors: false,
-    },
-  } as const
+    /** Без family/serverApi: иначе с mongodb+srv на части хостингов ловят TLS alert 80. */
+  }
 }
 
 export async function connectMongo(uri: string): Promise<Db> {

@@ -257,9 +257,12 @@ app.post('/api/rsvp/:token', async (req, res) => {
   }
 })
 
-const isProd = process.env.NODE_ENV === 'production'
+/** Фронт на Vercel — на Render только API. SPA с этого же процесса: SERVE_SPA=1 и собранный frontend/dist. */
 const frontendDist = path.join(__dirname, '../../frontend/dist')
-if (isProd && fs.existsSync(frontendDist)) {
+const serveSpa =
+  (process.env.SERVE_SPA === '1' || process.env.SERVE_SPA === 'true') &&
+  fs.existsSync(frontendDist)
+if (serveSpa) {
   app.use(express.static(frontendDist))
   app.get('*', (_req, res) => {
     res.sendFile(path.join(frontendDist, 'index.html'))
@@ -309,7 +312,7 @@ async function main() {
       env: process.env.NODE_ENV ?? 'development',
       db: process.env.MONGODB_DB_NAME || 'wend',
       mongo: true,
-      spa: isProd && fs.existsSync(frontendDist),
+      spa: serveSpa,
     })
   })
 }

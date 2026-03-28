@@ -7,7 +7,7 @@
     "dev:lan": "concurrently -k -n b,f \"npm run dev:lan --prefix backend\" \"npm run dev:lan --prefix frontend\"",
     "build": "npm run build --prefix frontend",
     "start": "npm run start --prefix backend",
-    "start:prod": "npm run build --prefix frontend && cross-env NODE_ENV=production HOST=0.0.0.0 npm run start --prefix backend",
+    "start:prod": "npm run build --prefix frontend && cross-env HOST=0.0.0.0 SERVE_SPA=1 npm run start --prefix backend",
     "preview": "npm run preview --prefix frontend",
     "preview:lan": "npm run preview:lan --prefix frontend"
   },

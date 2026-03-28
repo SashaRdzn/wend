@@ -25,39 +25,34 @@ npm install --prefix backend
 
 ## Продакшен
 
-### Вариант A — всё на Render (один сервис)
+### Вариант A — всё на одном сервере (VPS и т.п.)
 
-Один Web Service: и API, и статика из `frontend/dist`.
+Сборка фронта + бэкенд, один процесс отдаёт API и статику:
+
+```bash
+npm run start:prod
+```
+
+из корня (см. `package.json`: собирается `frontend/dist`, затем `SERVE_SPA=1 npm start` в `backend`).
+
+Вручную из `backend`: сначала `npm run build:all`, затем `npm run start:with-spa`.
+
+### Вариант B — фронт на Vercel, API на Render (рекомендуется для Render)
+
+**Render (только бэкенд, без фронта в этом сервисе):**
 
 1. **Root Directory:** `backend`.
-2. **Build Command:** `npm install && npm run build` (собирает фронт и ставит зависимости бэкенда).
-3. **Start Command:** `npm start` (`NODE_ENV=production`, раздача `frontend/dist`).
-4. **Environment:** `MONGODB_URI`, `ADMIN_PASSWORD`, `HOST=0.0.0.0`, `PORT` (Render задаёт сам).
+2. **Build Command:** `npm install` (или `npm ci`) — скрипт `build` в `backend` только ставит зависимости, **не** собирает фронт.
+3. **Start Command:** `npm start` — слушает `0.0.0.0`, **не** раздаёт `frontend/dist`, пока не задано `SERVE_SPA=1`.
+4. **Environment:** `MONGODB_URI`, `ADMIN_PASSWORD`, `PORT` (Render).
 
-### Вариант B — фронт на Vercel, API на Render (у вас так)
+CORS для Vercel: по умолчанию ок; при необходимости **`CORS_ORIGIN`**.
 
-Два разных URL: браузер с Vercel ходит на API по **полному URL** (CORS уже настроен в `backend/src/index.ts`: по умолчанию разрешён запрос с любого `Origin`, либо задайте **`CORS_ORIGIN`** списком доменов Vercel).
+Два разных URL: на Vercel задайте **`VITE_API_URL`** = URL вашего сервиса на Render.
 
-**Render (только бэкенд):**
+**Vercel (фронт):** Root `frontend`, build `npm run build`, переменная **`VITE_API_URL`** = `https://<ваш-сервис>.onrender.com` без `/` в конце.
 
-1. **Root Directory:** `backend`.
-2. **Build Command:** `npm install` — сборка фронта не обязательна (не тратим время на `npm run build` в `../frontend`).
-3. **Start Command:** `npm run start:api` — без раздачи SPA, только Express + `/api`.
-4. **Environment:** `MONGODB_URI`, `ADMIN_PASSWORD`, `PORT` (как задаёт Render). `HOST` на `0.0.0.0` уже выставляет скрипт `start:api`.
-
-**Vercel (фронт):**
-
-1. Подключите репозиторий, **Root Directory** — `frontend` (или корень, если билд из корня).
-2. **Build:** `npm run build` (или через Nx/Vercel defaults).
-3. В **Environment Variables** (Production / Preview):
-
-   `VITE_API_URL` = `https://<ваш-сервис>.onrender.com`  
-
-   без слэша в конце. Тогда `frontend/src/apiUrl.ts` подставит этот URL ко всем запросам `/api/...`.
-
-4. После смены URL бэкенда пересоберите деплой на Vercel.
-
-Локально проверка «как на Vercel»: `frontend/.env.example` → `.env.local` с `VITE_API_URL`, затем `npm run build && npm run preview`.
+Локально «как на Vercel»: `frontend/.env.local` с `VITE_API_URL`, затем `npm run build && npm run preview`.
 
 ### MongoDB Atlas + Render (ошибка TLS / `alert number 80`)
 
@@ -65,15 +60,12 @@ npm install --prefix backend
 - Строка подключения: драйвер **Node.js**, пароль без спецсимволов или **URL-encoded** в URI.
 - В коде включён обход типичной проблемы **IPv6 + TLS** (`dns.setDefaultResultOrder('ipv4first')` в `mongoDb.ts`).
 
-Если подключение всё ещё падает: URI целиком (`mongodb+srv://...`), пароль в URI закодирован. На Render при **TLS alert 80** к Atlas попробуйте в настройках сервиса указать **Node 20 LTS** вместо 22 — иногда стабильнее с OpenSSL. В коде уже включены **повторные попытки** подключения, **IPv4 (`family: 4`)** и **Stable API v1**.
+Если **TLS alert 80** не проходит: пароль в URI должен быть **URL-encoded**; в Atlas попробуйте **стандартную** строку подключения (не `mongodb+srv`, а список хостов из «Connect»). На Render задайте **Node 20 LTS**. В коде — **повторные попытки** и `dns.setDefaultResultOrder('ipv4first')` без агрессивных TLS-опций драйвера.
 
-### Локальная сборка как на сервере
+### Локально: один origin (фронт + API)
 
 ```bash
-npm install --prefix frontend
-npm run build --prefix frontend
-npm install --prefix backend
-cd backend && npm start
+npm run start:prod
 ```
 
-Откройте порт из лога (по умолчанию 4000): сайт и `/api` с одного origin.
+из корня, либо соберите фронт и запустите `npm run start:with-spa` в `backend`.
