@@ -1,4 +1,8 @@
+import dns from 'node:dns'
 import { MongoClient, type Collection, type Db } from 'mongodb'
+
+/** Atlas + Node на части хостингов (Render и др.) ломают TLS при приоритете IPv6 — см. MongoDB-7556. */
+dns.setDefaultResultOrder('ipv4first')
 
 export type GuestDoc = {
   id: number
@@ -18,7 +22,9 @@ let db: Db | null = null
 
 export async function connectMongo(uri: string): Promise<Db> {
   if (db) return db
-  client = new MongoClient(uri)
+  client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 25_000,
+  })
   await client.connect()
   const name = process.env.MONGODB_DB_NAME || 'wend'
   db = client.db(name)

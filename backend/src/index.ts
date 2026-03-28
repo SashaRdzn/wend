@@ -1,5 +1,5 @@
 import express from 'express'
-import cors from 'cors'
+import cors, { type CorsOptions } from 'cors'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -61,7 +61,16 @@ function authMiddleware(req: express.Request, res: express.Response, next: expre
   next()
 }
 
-app.use(cors())
+/** Vercel и др.: браузер шлёт Origin — либо список из CORS_ORIGIN, либо «отразить» Origin (true). */
+const corsOptions: CorsOptions = {
+  origin: (() => {
+    const raw = process.env.CORS_ORIGIN?.trim()
+    if (!raw) return true
+    if (raw === '*') return true
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)
+  })(),
+}
+app.use(cors(corsOptions))
 app.use(express.json({ limit: '512kb' }))
 app.use(requestLogMiddleware)
 
