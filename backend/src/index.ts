@@ -6,18 +6,22 @@ import { fileURLToPath } from 'url'
 import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
 import crypto from 'crypto'
+import { logger } from './logger'
+import { requestLogMiddleware } from './httpLog'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-/** На Render без диска файл теряется при рестарте — задайте SQLITE_PATH на смонтированный том, например /data/wedding.sqlite */
 const SQLITE_FILE = process.env.SQLITE_PATH
   ? path.resolve(process.env.SQLITE_PATH)
   : path.join(__dirname, '..', 'wedding.sqlite')
 
 const app = express()
+/** На Render за прокси — корректный req.ip / X-Forwarded-For */
+app.set('trust proxy', 1)
+
 const PORT = Number(process.env.PORT) || 4000
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1')
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin_na_vaibe'
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 const sessions = new Map<string, { expiresAt: number }>()
@@ -61,7 +65,8 @@ function authMiddleware(req: express.Request, res: express.Response, next: expre
 }
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '512kb' }))
+app.use(requestLogMiddleware)
 
 let dbPromise: ReturnType<typeof open<sqlite3.Database, sqlite3.Statement>>
 
@@ -105,11 +110,13 @@ function generateToken() {
 app.post('/api/auth/login', (req, res) => {
   const { password } = req.body as { password?: string }
   if (password !== ADMIN_PASSWORD) {
+    logger.warn('auth_login_rejected', { ip: req.ip, path: '/api/auth/login' })
     res.status(401).json({ error: 'Неверный пароль' })
     return
   }
   const token = crypto.randomBytes(24).toString('hex')
   sessions.set(token, { expiresAt: Date.now() + SESSION_TTL_MS })
+  logger.info('auth_login_ok', { ip: req.ip })
   res.json({ token })
 })
 
@@ -134,7 +141,10 @@ app.get('/api/guests', authMiddleware, async (_req, res) => {
       })),
     )
   } catch (e) {
-    console.error(e)
+    logger.error('api_guests_list_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    })
     res.status(500).json({ error: 'Failed to load guests' })
   }
 })
@@ -170,7 +180,10 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
       alcoholPreferences: parseAlcoholJson(created.alcoholPreferences as string | null),
     })
   } catch (e) {
-    console.error(e)
+    logger.error('api_guests_create_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    })
     res.status(500).json({ error: 'Failed to create guest' })
   }
 })
@@ -188,7 +201,11 @@ app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
     }
     res.json({ ok: true })
   } catch (e) {
-    console.error(e)
+    logger.error('api_guests_delete_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+      id,
+    })
     res.status(500).json({ error: 'Failed to delete guest' })
   }
 })
@@ -215,7 +232,10 @@ app.get('/api/guests/by-token/:token', async (req, res) => {
       hasResponded: rsvpAt != null && rsvpAt !== '',
     })
   } catch (e) {
-    console.error(e)
+    logger.error('api_guest_by_token_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    })
     res.status(500).json({ error: 'Failed to load guest' })
   }
 })
@@ -253,7 +273,11 @@ app.post('/api/rsvp/:token', async (req, res) => {
     )
     res.json({ ok: true })
   } catch (e) {
-    console.error(e)
+    logger.error('api_rsvp_save_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+      tokenSuffix: req.params.token?.slice(-8),
+    })
     res.status(500).json({ error: 'Failed to save RSVP' })
   }
 })
@@ -267,8 +291,41 @@ if (isProd && fs.existsSync(frontendDist)) {
   })
 }
 
+app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  logger.error('express_sync_error', {
+    err: err instanceof Error ? err.message : String(err),
+    stack: err instanceof Error ? err.stack : undefined,
+    method: req.method,
+    path: req.originalUrl,
+  })
+  if (res.headersSent) {
+    next(err)
+    return
+  }
+  res.status(500).json({ error: 'Internal server error' })
+})
+
+process.on('unhandledRejection', (reason: unknown) => {
+  logger.error('unhandled_rejection', {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  })
+})
+
+process.on('uncaughtException', (err: Error) => {
+  logger.error('uncaught_exception', { message: err.message, stack: err.stack })
+  process.exit(1)
+})
+
 app.listen(PORT, HOST, () => {
-  const hostLabel = HOST === '0.0.0.0' ? '0.0.0.0' : HOST
-  console.log(`Backend http://${hostLabel}:${PORT}`)
+  logger.info('server_ready', {
+    listen: `${HOST}:${PORT}`,
+    port: PORT,
+    host: HOST,
+    node: process.version,
+    env: process.env.NODE_ENV ?? 'development',
+    sqlite: path.basename(SQLITE_FILE),
+    spa: isProd && fs.existsSync(frontendDist),
+  })
 })
 

@@ -33,6 +33,16 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 html,
 body,
 #root {
@@ -58,9 +68,19 @@ body {
 
 .gallery-live {
   animation: gallerySlide 35s linear infinite;
+  transform: translateZ(0);
 }
 .gallery-live:hover {
   animation-play-state: paused;
+}
+
+/* Локальные фото: меньше «зерна» при масштабе и анимации */
+.intro-collage-img,
+.gallery-strip-img {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  image-rendering: auto;
 }
 
 .countdown-block {
@@ -144,6 +164,46 @@ body {
 @media (min-width: 640px) {
   .flip-digit {
     font-size: 1.6rem;
+  }
+}
+
+/* Узкий экран ~375px: обратный отсчёт в одну строку */
+@media (max-width: 375px) {
+  .flip-cube-cell {
+    min-width: 1.2rem;
+  }
+  .flip-cube {
+    height: 1.75rem;
+    perspective: 160px;
+  }
+  .flip-digit {
+    font-size: 0.95rem;
+  }
+  .countdown-cell-label {
+    letter-spacing: 0.02em;
+  }
+}
+
+@keyframes heroScrollHint {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.62;
+  }
+  50% {
+    transform: translate3d(0, 5px, 0);
+    opacity: 0.9;
+  }
+}
+
+.hero-scroll-hint {
+  animation: heroScrollHint 3.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-hint {
+    animation: none;
+    opacity: 0.75;
   }
 }
 

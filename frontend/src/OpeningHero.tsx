@@ -38,31 +38,34 @@ export function OpeningHero() {
           </p> */}
         </div>
 
-        <div className="mt-auto flex flex-col">
+        <div className="mt-auto flex flex-col text-[#4a5243]">
           <div className="mb-10 self-end text-right font-serif text-[23px] font-medium leading-relaxed tracking-[0.28em] text-ink sm:mb-14 sm:text-xs sm:tracking-[0.32em]">
-            <div>ВЛАДИМИР</div>
-            <div className="my-1 font-display text-2xl tracking-normal text-sage sm:text-3xl">
-              &
+            <div className='text-[#4a5243]'>ВЛАДИМИР</div>
+            <div className="my-1  font-display text-2xl tracking-normal text-sage sm:text-3xl">
+              <div className='text-[#4a5243]'>&
+                </div>
             </div>
-            <div>ЕЛИЗАВЕТА</div>
+            <div className='text-[#4a5243]'>ЕЛИЗАВЕТА</div>
           </div>
 
           <a
-            href="#calendar"
-            className="mx-auto flex flex-col items-center gap-1 pb-2 text-ink/45 transition hover:text-ink/70"
-            aria-label="К календарю и деталям"
+            href="#intro"
+            className="group mx-auto flex flex-col items-center pb-2 text-ink/50 transition-colors duration-700 ease-out hover:text-ink/80"
+            aria-label="К приглашению"
           >
-            <span className="text-[10px] uppercase tracking-[0.35em]">далее</span>
-            <svg
-              className="h-5 w-5 animate-bounce"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              aria-hidden
-            >
-              <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <span className="hero-scroll-hint flex flex-col items-center gap-1.5 will-change-transform">
+              <span className="text-[10px] uppercase tracking-[0.35em]">далее</span>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden
+              >
+                <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
           </a>
         </div>
       </div>

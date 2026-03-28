@@ -5,9 +5,6 @@ export const WEDDING_DATE = new Date('2026-06-06T16:00:00')
 export const VENUE_LON = 74.646246
 export const VENUE_LAT = 42.788006
 
-/** Идентификатор объекта в 2ГИС (для ссылки «Маршруты») */
-export const VENUE_2GIS_GEO_ID = '70000001110511888' as const
-
 /** Примерный адрес для блока «Место» (замените на настоящий) */
 export const VENUE_ADDRESS_LINES = [
   'Кыргызстан, Бишкек',
