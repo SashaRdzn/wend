@@ -3,12 +3,11 @@ import cors, { type CorsOptions } from 'cors'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
-import sqlite3 from 'sqlite3'
-import { open } from 'sqlite'
 import crypto from 'crypto'
 import { logger } from './logger'
 import { requestLogMiddleware } from './httpLog'
 import { config as loadEnv } from 'dotenv'
+import { openSqliteDatabase, type SqliteAsync } from './sqliteDb'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 loadEnv({ path: path.join(__dirname, '../.env') })
@@ -79,15 +78,15 @@ app.use(cors(corsOptions))
 app.use(express.json({ limit: '512kb' }))
 app.use(requestLogMiddleware)
 
-let dbPromise: ReturnType<typeof open<sqlite3.Database, sqlite3.Statement>>
+let dbSingleton: SqliteAsync | null = null
+let dbMigrated = false
 
-async function initDb() {
-  if (!dbPromise) {
-    dbPromise = open({
-      filename: SQLITE_FILE,
-      driver: sqlite3.Database,
-    })
-    const db = await dbPromise
+async function initDb(): Promise<SqliteAsync> {
+  if (!dbSingleton) {
+    dbSingleton = openSqliteDatabase(SQLITE_FILE)
+  }
+  const db = dbSingleton
+  if (!dbMigrated) {
     await db.exec(`
       CREATE TABLE IF NOT EXISTS guests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,8 +109,9 @@ async function initDb() {
         `UPDATE guests SET rsvpAt = updatedAt WHERE rsvpAt IS NULL AND updatedAt != createdAt`,
       )
     }
+    dbMigrated = true
   }
-  return dbPromise
+  return db
 }
 
 function generateToken() {
@@ -181,14 +181,25 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
       now,
       now,
     )
-    const created = await db.get(
+    const created = await db.get<{
+      id: number
+      name: string
+      token: string
+      status: string
+      plusOne: number
+      comment: string | null
+      alcoholPreferences: string | null
+    }>(
       'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests WHERE id = ?',
       result.lastID,
     )
+    if (!created) {
+      return res.status(500).json({ error: 'Failed to read created guest' })
+    }
     res.status(201).json({
       ...created,
       plusOne: !!created.plusOne,
-      alcoholPreferences: parseAlcoholJson(created.alcoholPreferences as string | null),
+      alcoholPreferences: parseAlcoholJson(created.alcoholPreferences),
     })
   } catch (e) {
     logger.error('api_guests_create_failed', {

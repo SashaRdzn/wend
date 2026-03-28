@@ -1,6 +1,6 @@
 # Wedding — приглашения и RSVP
 
-Монорепозиторий: фронтенд (Vite + React) и бэкенд (Express + **SQLite**).
+Монорепозиторий: фронтенд (Vite + React) и бэкенд (Express + **SQLite** через встроенный **`node:sqlite`**, без нативного `sqlite3` — нужен **Node.js ≥ 22.5**).
 
 ## Установка
 
