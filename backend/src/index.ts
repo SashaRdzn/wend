@@ -141,6 +141,47 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true })
 })
 
+/** См. GET /api/egg/prize/:token — та же формула, для сверки в админке. */
+function eggPrizePhraseForToken(token: string): string {
+  const secret = process.env.EGG_PRIZE_SECRET || 'wend-egg-dev-secret-change-in-prod'
+  const h = crypto.createHmac('sha256', secret).update(token).digest()
+  const a = h.readUInt32BE(0)
+  const b = h.readUInt32BE(4)
+  const c = h.readUInt32BE(8)
+  const words = [
+    'лунный',
+    'тихий',
+    'садовый',
+    'утренний',
+    'звёздный',
+    'медовый',
+    'лесной',
+    'ночной',
+    'солнечный',
+    'нежный',
+    'смелый',
+    'добрый',
+  ]
+  const nouns = [
+    'кролик',
+    'лось',
+    'светлячок',
+    'компас',
+    'зонтик',
+    'тортик',
+    'маршрут',
+    'секрет',
+    'код',
+    'приз',
+    'ключик',
+    'сердце',
+  ]
+  const w1 = words[a % words.length]
+  const w2 = nouns[b % nouns.length]
+  const num = 1000 + (c % 9000)
+  return `${w1}-${w2}-${num}`
+}
+
 app.get('/api/guests', authMiddleware, async (_req, res) => {
   try {
     const db = await initDb()
@@ -148,12 +189,16 @@ app.get('/api/guests', authMiddleware, async (_req, res) => {
       'SELECT id, name, token, status, plusOne, comment, alcoholPreferences, rsvpSource FROM guests ORDER BY createdAt ASC',
     )
     res.json(
-      guests.map((g) => ({
-        ...g,
-        plusOne: !!g.plusOne,
-        alcoholPreferences: parseAlcoholJson(g.alcoholPreferences as string | null),
-        rsvpSource: (g as { rsvpSource?: string | null }).rsvpSource ?? null,
-      })),
+      guests.map((g) => {
+        const token = String((g as { token: string }).token)
+        return {
+          ...g,
+          plusOne: !!g.plusOne,
+          alcoholPreferences: parseAlcoholJson(g.alcoholPreferences as string | null),
+          rsvpSource: (g as { rsvpSource?: string | null }).rsvpSource ?? null,
+          eggPhrase: eggPrizePhraseForToken(token),
+        }
+      }),
     )
   } catch (e) {
     logger.error('api_guests_list_failed', {
@@ -236,47 +281,6 @@ app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete guest' })
   }
 })
-
-/** Уникальная «секретная фраза» для пасхалки: HMAC(token, секрет) → читаемый код (без хранения в БД). */
-function eggPrizePhraseForToken(token: string): string {
-  const secret = process.env.EGG_PRIZE_SECRET || 'wend-egg-dev-secret-change-in-prod'
-  const h = crypto.createHmac('sha256', secret).update(token).digest()
-  const a = h.readUInt32BE(0)
-  const b = h.readUInt32BE(4)
-  const c = h.readUInt32BE(8)
-  const words = [
-    'лунный',
-    'тихий',
-    'садовый',
-    'утренний',
-    'звёздный',
-    'медовый',
-    'лесной',
-    'ночной',
-    'солнечный',
-    'нежный',
-    'смелый',
-    'добрый',
-  ]
-  const nouns = [
-    'кролик',
-    'лось',
-    'светлячок',
-    'компас',
-    'зонтик',
-    'тортик',
-    'маршрут',
-    'секрет',
-    'код',
-    'приз',
-    'ключик',
-    'сердце',
-  ]
-  const w1 = words[a % words.length]
-  const w2 = nouns[b % nouns.length]
-  const num = 1000 + (c % 9000)
-  return `${w1}-${w2}-${num}`
-}
 
 app.get('/api/egg/prize/:token', async (req, res) => {
   try {

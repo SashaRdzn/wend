@@ -25,6 +25,8 @@ type Guest = {
   alcoholPreferences: AlcoholKey[] | null
   /** invite — админка / старые записи; open — анкета с главной */
   rsvpSource: 'invite' | 'open'
+  /** Персональная фраза пасхалки (как у гостя после игры), для сверки */
+  eggPhrase: string
 }
 
 function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
@@ -65,6 +67,7 @@ function parseGuest(raw: unknown): Guest | null {
   const src = o.rsvpSource
   const rsvpSource: Guest['rsvpSource'] =
     src === 'open' ? 'open' : 'invite'
+  const eggPhrase = typeof o.eggPhrase === 'string' ? o.eggPhrase : ''
   return {
     id,
     name,
@@ -74,6 +77,7 @@ function parseGuest(raw: unknown): Guest | null {
     comment,
     alcoholPreferences: prefs.length ? prefs : null,
     rsvpSource,
+    eggPhrase,
   }
 }
 
@@ -138,6 +142,20 @@ export function AdminPage() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [copiedEggId, setCopiedEggId] = useState<number | null>(null)
+
+  const copyEggPhrase = async (g: Guest) => {
+    if (!g.eggPhrase) return
+    try {
+      await navigator.clipboard.writeText(g.eggPhrase)
+      setCopiedEggId(g.id)
+      window.setTimeout(() => {
+        setCopiedEggId((cur) => (cur === g.id ? null : cur))
+      }, 2000)
+    } catch {
+      /* */
+    }
+  }
 
   const copyInviteLink = async (g: Guest) => {
     try {
@@ -470,6 +488,10 @@ export function AdminPage() {
           <h2 className="mb-2 text-xs font-semibold text-champagne sm:mb-3 sm:text-sm">
             Список гостей
           </h2>
+          <p className="mb-3 max-w-2xl text-[10px] leading-relaxed text-ink/45 sm:mb-4 sm:text-[11px]">
+            Колонка «Пасхалка» — персональный код после мини-игры на сайте. Совпадает с тем, что
+            видит гость у себя; можно сверить, если человек прислал фразу для приза.
+          </p>
           {loading ? (
             <p className="text-ink/50">Загрузка…</p>
           ) : guests.length === 0 ? (
@@ -513,6 +535,19 @@ export function AdminPage() {
                     >
                       {copiedId === g.id ? 'Ссылка скопирована' : 'Скопировать ссылку'}
                     </button>
+                    {g.eggPhrase ? (
+                      <div className="mt-3 rounded-lg border border-ink/10 bg-white/60 px-2 py-2">
+                        <p className="text-[9px] uppercase tracking-wider text-ink/40">Пасхалка</p>
+                        <p className="mt-1 break-all font-mono text-[11px] text-moss">{g.eggPhrase}</p>
+                        <button
+                          type="button"
+                          onClick={() => copyEggPhrase(g)}
+                          className="mt-2 min-h-[36px] w-full rounded-lg border border-ink/12 bg-cream/90 px-2 py-1.5 text-[10px] font-medium text-ink/75 transition hover:bg-sand/50"
+                        >
+                          {copiedEggId === g.id ? 'Код скопирован' : 'Скопировать код'}
+                        </button>
+                      </div>
+                    ) : null}
                     {formatGuestAlcohol(g.alcoholPreferences) && (
                       <p className="mt-2 text-[11px] text-ink/60">
                         <span className="text-ink/40">Напитки: </span>
@@ -536,11 +571,12 @@ export function AdminPage() {
                 ))}
               </div>
               <div className="hidden overflow-x-auto sm:block">
-                <table className="min-w-[860px] border-separate border-spacing-y-1 text-left">
+                <table className="min-w-[1040px] border-separate border-spacing-y-1 text-left">
                   <thead className="text-[11px] uppercase tracking-[0.16em] text-ink/45">
                     <tr>
                       <th className="px-3 py-1">Имя</th>
                       <th className="px-3 py-1">Откуда</th>
+                      <th className="min-w-[200px] px-3 py-1">Пасхалка</th>
                       <th className="px-3 py-1">Статус</th>
                       <th className="px-3 py-1">+1</th>
                       <th className="px-3 py-1">Напитки</th>
@@ -560,6 +596,24 @@ export function AdminPage() {
                         <td className="px-3 py-2 text-sm text-champagne">{g.name}</td>
                         <td className="px-3 py-2 text-[11px] text-ink/60">
                           {g.rsvpSource === 'open' ? 'Главная' : 'Админка'}
+                        </td>
+                        <td className="max-w-[240px] px-3 py-2 align-top">
+                          {g.eggPhrase ? (
+                            <div className="flex flex-col gap-1">
+                              <span className="break-all font-mono text-[11px] leading-snug text-moss">
+                                {g.eggPhrase}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => copyEggPhrase(g)}
+                                className="w-max rounded-md border border-ink/12 bg-cream/90 px-2 py-1 text-[10px] font-medium text-ink/70 transition hover:bg-sand/50"
+                              >
+                                {copiedEggId === g.id ? 'Скопировано' : 'Копировать'}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-ink/35">—</span>
+                          )}
                         </td>
                         <td className="px-3 py-2">
                           {g.status === 'accepted'
