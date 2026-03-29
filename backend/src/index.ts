@@ -232,6 +232,65 @@ app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
   }
 })
 
+/** Уникальная «секретная фраза» для пасхалки: HMAC(token, секрет) → читаемый код (без хранения в БД). */
+function eggPrizePhraseForToken(token: string): string {
+  const secret = process.env.EGG_PRIZE_SECRET || 'wend-egg-dev-secret-change-in-prod'
+  const h = crypto.createHmac('sha256', secret).update(token).digest()
+  const a = h.readUInt32BE(0)
+  const b = h.readUInt32BE(4)
+  const c = h.readUInt32BE(8)
+  const words = [
+    'лунный',
+    'тихий',
+    'садовый',
+    'утренний',
+    'звёздный',
+    'медовый',
+    'лесной',
+    'ночной',
+    'солнечный',
+    'нежный',
+    'смелый',
+    'добрый',
+  ]
+  const nouns = [
+    'кролик',
+    'лось',
+    'светлячок',
+    'компас',
+    'зонтик',
+    'тортик',
+    'маршрут',
+    'секрет',
+    'код',
+    'приз',
+    'ключик',
+    'сердце',
+  ]
+  const w1 = words[a % words.length]
+  const w2 = nouns[b % nouns.length]
+  const num = 1000 + (c % 9000)
+  return `${w1}-${w2}-${num}`
+}
+
+app.get('/api/egg/prize/:token', async (req, res) => {
+  try {
+    const db = await initDb()
+    const row = await db.get<{ id: number }>('SELECT id FROM guests WHERE token = ?', req.params.token)
+    if (!row) {
+      return res.status(404).json({ error: 'Guest not found' })
+    }
+    const phrase = eggPrizePhraseForToken(req.params.token)
+    res.json({ phrase })
+  } catch (e) {
+    logger.error('api_egg_prize_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    })
+    res.status(500).json({ error: 'Failed to load prize' })
+  }
+})
+
 app.get('/api/guests/by-token/:token', async (req, res) => {
   try {
     const db = await initDb()

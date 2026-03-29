@@ -6,9 +6,14 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-// import { Link } from 'react-router-dom'
 import { FlipDigit } from './FlipDigit'
 import { OpeningHero } from './OpeningHero'
+import {
+  EggFirstModal,
+  EggHeartGameSection,
+  EggThirdPlaceholderModal,
+  EggWatermelonModal,
+} from './EasterEgg'
 import { WeddingCalendar } from './WeddingCalendar'
 import {
   VENUE_ADDRESS_LINES,
@@ -30,6 +35,15 @@ import jointPhoto9 from './assets/pictures/joint_photo9.jpg'
 import jointPhoto10 from './assets/pictures/joint_photo10.jpg'
 import jointPhoto11 from './assets/pictures/joint_photo11.jpg'
 
+
+import dressFabric12 from './assets/pictures/dark.jpg'
+import dressFabric13 from './assets/pictures/dress13.JPG'
+import dressFabric14 from './assets/pictures/oliva.jpg'
+import dressFabric15 from './assets/pictures/mate.jpg'
+import dressFabric16 from './assets/pictures/yellow.jpg'
+
+
+
 import dressCodeMain from './assets/pictures/dress.JPG'
 import dressCode1 from './assets/pictures/dress1.JPG'
 import dressCode3 from './assets/pictures/dress3.JPG'
@@ -41,11 +55,6 @@ import dressCode8 from './assets/pictures/dress8.JPG'
 import dressCode9 from './assets/pictures/dress9.JPG'
 import dressCode10 from './assets/pictures/dress10.JPG'
 import dressCode11 from './assets/pictures/dress11.JPG'
-import dressFabric12 from './assets/pictures/dress12.JPG'
-import dressFabric13 from './assets/pictures/dress13.JPG'
-import dressFabric14 from './assets/pictures/dress14.JPG'
-import dressFabric15 from './assets/pictures/dress15.JPG'
-import dressFabric16 from './assets/pictures/dress16.JPG'
 import dressCode17 from './assets/pictures/dress17.JPG'
 import dressCode18 from './assets/pictures/dress18.JPG'
 import dressCode19 from './assets/pictures/dress19.JPG'
@@ -66,14 +75,13 @@ const DRESS_CODE_PALETTE: {
   color: string
   label: string
 }[] = [
-  { fabric: dressFabric12, color: '#3f3a32', label: 'Тёмный' },
-  { fabric: dressFabric13, color: '#9a867c', label: 'Тауп' },
-  { fabric: dressFabric14, color: '#6b7350', label: 'Олива' },
-  { fabric: dressFabric15, color: '#c4d4b8', label: 'Мята' },
-  { fabric: dressFabric16, color: '#f2ebe0', label: 'Крем' },
+  { fabric: dressFabric12, color: '#57352C', label: 'Шоколад' },
+  { fabric: dressFabric13, color: '#9a867c', label: 'Трава зелееная зеленая' },
+  { fabric: dressFabric15, color: '#6A7452', label: 'Мята' }, 
+  { fabric: dressFabric14, color: '#A19C1F', label: 'Олива' },
+  { fabric: dressFabric16, color: '#EFE69C', label: 'Лимон' },
 ]
 
-/** Начальный список: 0, 1, 4, 15, 11, 28, 16, 17 (dress2 не используем) */
 const DRESS_CODE_GALLERY_FIRST = [
   dressCodeMain,
   dressCode1,
@@ -200,11 +208,14 @@ export type WeddingLandingProps = {
   guestName?: string | null
   showOpenInviteLink?: boolean
   rsvpSlot?: ReactNode
+  /** Токен из ссылки-приглашения — для персональной фразы после мини-игры */
+  inviteToken?: string | null
 }
 
 export function WeddingLanding({
   guestName,
   rsvpSlot,
+  inviteToken,
 }: WeddingLandingProps) {
   const countdown = useCountdown(WEDDING_DATE)
   const scheduleWrapRef = useRef<HTMLDivElement | null>(null)
@@ -232,6 +243,17 @@ export function WeddingLanding({
   const dressCodeSectionRef = useRef<HTMLElement | null>(null)
   const [dressCodeInView, setDressCodeInView] = useState(false)
   const [dressGalleryExpanded, setDressGalleryExpanded] = useState(false)
+  const [eggFirstOpen, setEggFirstOpen] = useState(false)
+  /** Закрыли первую модалку (календарь) — можно показать «арбуз» в футере */
+  const [eggFirstDone, setEggFirstDone] = useState(false)
+  const [eggWatermelonOpen, setEggWatermelonOpen] = useState(false)
+  /** Закрыли модалку с арбузом — показываем строку в герое */
+  const [eggWatermelonDone, setEggWatermelonDone] = useState(false)
+  const [eggThirdOpen, setEggThirdOpen] = useState(false)
+  /** Закрыли третью модалку — открываем мини-игру */
+  const [eggThirdDone, setEggThirdDone] = useState(false)
+
+  const eggGameUnlocked = eggFirstDone && eggWatermelonDone && eggThirdDone
 
   useLayoutEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -370,7 +392,10 @@ export function WeddingLanding({
 
   return (
     <>
-      <OpeningHero />
+      <OpeningHero
+        showTopEggLine={eggWatermelonDone}
+        onTopEggLineClick={() => setEggThirdOpen(true)}
+      />
       <div id="main" className="relative bg-cream text-ink">
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(163,177,138,0.22),transparent_58%),radial-gradient(circle_at_bottom,_rgba(227,213,202,0.4),transparent_55%)]" />
@@ -545,7 +570,7 @@ export function WeddingLanding({
             className="mt-10 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-12 sm:pt-12 lg:mt-14"
           >
             <div className="mx-auto max-w-3xl px-1 text-center sm:px-4">
-              <WeddingCalendar />
+              <WeddingCalendar onWeddingDayHeartClick={() => setEggFirstOpen(true)} />
             </div>
           </section>
 
@@ -633,7 +658,7 @@ export function WeddingLanding({
 
                     <span
                       ref={scheduleHeartRef}
-                      className="calendar-heart absolute z-10 -translate-x-1/2 -translate-y-1/2"
+                      className="calendar-heart pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2"
                       style={{
                         left: scheduleGeom.stopPoints[0]?.x ?? 0,
                         top: scheduleGeom.stopPoints[0]?.y ?? 0,
@@ -939,19 +964,54 @@ export function WeddingLanding({
                     type="submit"
                     className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-sage via-[#95a882] to-sand px-5 py-2.5 text-sm font-semibold text-moss shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98] sm:px-6"
                   >
-                    Отправить RSVP
+                    Отправить
                   </button>
-                  <p className="text-[11px] text-ink/50">
-                    Позже здесь появится ваш персональный пригласительный с уникальной ссылкой и
-                    QR‑кодом.
-                  </p>
                 </div>
               </form>
             )}
           </section>
+
+          {eggGameUnlocked ? (
+            <EggHeartGameSection inviteToken={inviteToken ?? null} />
+          ) : null}
+
+          <footer className="mt-14 border-t border-ink/10 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 text-center sm:mt-16 sm:pt-10">
+            {eggFirstDone && !eggWatermelonDone ? (
+              <button
+                type="button"
+                onClick={() => setEggWatermelonOpen(true)}
+                className="relative z-10 border-0 bg-transparent p-2 text-[9px] text-ink/45 underline decoration-ink/25 decoration-dotted underline-offset-4 transition hover:text-ink/70 sm:text-[10px]"
+              >
+                арбуз
+              </button>
+            ) : eggGameUnlocked ? (
+              <p className="text-[9px] text-ink/35 sm:text-[10px]">С любовью</p>
+            ) : null}
+          </footer>
         </div>
       </div>
     </div>
+      <EggFirstModal
+        open={eggFirstOpen}
+        onClose={() => {
+          setEggFirstOpen(false)
+          setEggFirstDone(true)
+        }}
+      />
+      <EggWatermelonModal
+        open={eggWatermelonOpen}
+        onClose={() => {
+          setEggWatermelonOpen(false)
+          setEggWatermelonDone(true)
+        }}
+      />
+      <EggThirdPlaceholderModal
+        open={eggThirdOpen}
+        onClose={() => {
+          setEggThirdOpen(false)
+          setEggThirdDone(true)
+        }}
+      />
     </>
   )
 }

@@ -29,9 +29,24 @@ function buildMonthCells(year: number, monthIndex: number): (number | null)[] {
 
 const HEART_PALE_PINK = '#f5c6d6'
 
-function HeartWithDay({ day }: { day: number }) {
+function HeartWithDay({
+  day,
+  onHeartClick,
+}: {
+  day: number
+  onHeartClick?: () => void
+}) {
   return (
-    <span className="calendar-heart relative inline-flex">
+    <button
+      type="button"
+      className="calendar-heart relative z-20 flex h-[3.25rem] w-[3.25rem] shrink-0 cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent p-0 sm:h-16 sm:w-16"
+      onClick={onHeartClick}
+      aria-label={`День свадьбы ${day}`}
+    >
+      {/*
+        Важно: сердце в absolute не задаёт размер кнопки — без min размера кликабельна
+        только узкая область цифры, клики по розовому сердцу не срабатывали.
+      */}
       <svg
         className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-12 w-12 -translate-x-1/2 -translate-y-1/2 sm:h-[3.75rem] sm:w-[3.75rem]"
         viewBox="0 0 24 24"
@@ -44,11 +59,15 @@ function HeartWithDay({ day }: { day: number }) {
         />
       </svg>
       <span className="relative z-[1] tabular-nums text-ink/55">{day}</span>
-    </span>
+    </button>
   )
 }
 
-export function WeddingCalendar() {
+export function WeddingCalendar({
+  onWeddingDayHeartClick,
+}: {
+  onWeddingDayHeartClick?: () => void
+} = {}) {
   const y = WEDDING_DATE.getFullYear()
   const monthIndex = WEDDING_DATE.getMonth()
   const weddingDay = WEDDING_DATE.getDate()
@@ -76,12 +95,12 @@ export function WeddingCalendar() {
         {cells.map((day, i) => (
           <div
             key={i}
-            className={`relative flex min-h-[2.5rem] items-center justify-center sm:min-h-[3rem] ${
+            className={`relative z-0 flex min-h-[2.5rem] items-center justify-center sm:min-h-[3rem] ${
               day === null ? '' : ''
             }`}
           >
             {day === null ? null : day === weddingDay ? (
-              <HeartWithDay day={day} />
+              <HeartWithDay day={day} onHeartClick={onWeddingDayHeartClick} />
             ) : (
               <span className="tabular-nums text-ink/55">{day}</span>
             )}

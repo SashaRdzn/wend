@@ -359,6 +359,7 @@ export function InvitePage() {
       guestName={guest.name}
       showOpenInviteLink
       rsvpSlot={rsvpSlot}
+      inviteToken={token}
     />
   )
 }
