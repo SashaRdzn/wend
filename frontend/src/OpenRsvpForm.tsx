@@ -6,8 +6,18 @@ import {
   parseAlcoholPreferences,
 } from './alcoholOptions'
 import { apiUrl } from './apiUrl'
+import {
+  RsvpPhotoFields,
+  appendRsvpFiles,
+  emptyRsvpPhotos,
+  validateRsvpPhotos,
+  type RsvpPhotosFormState,
+  type RsvpSavedPhotos,
+} from './RsvpPhotoFields'
 
 const OPEN_RSVP_TOKEN_KEY = 'wend-open-rsvp-token'
+
+const emptySavedPhotos: RsvpSavedPhotos = { self: false, plusOne: false, together: false }
 
 type Guest = {
   id: number
@@ -18,6 +28,7 @@ type Guest = {
   comment?: string | null
   alcoholPreferences?: AlcoholKey[]
   hasResponded?: boolean
+  photos?: RsvpSavedPhotos
 }
 
 function formDefaults() {
@@ -39,6 +50,7 @@ export function OpenRsvpForm() {
   const [plusOne, setPlusOne] = useState(false)
   const [comment, setComment] = useState('')
   const [alcohol, setAlcohol] = useState<Set<AlcoholKey>>(() => new Set())
+  const [photos, setPhotos] = useState<RsvpPhotosFormState>(() => emptyRsvpPhotos())
   const [guest, setGuest] = useState<Guest | null>(null)
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -84,6 +96,10 @@ export function OpenRsvpForm() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!plusOne) setPhotos((p) => ({ ...p, plusOne: null, together: null }))
+  }, [plusOne])
+
   const toggleAlcohol = (key: AlcoholKey) => {
     setAlcohol((prev) => {
       const next = new Set(prev)
@@ -109,18 +125,28 @@ export function OpenRsvpForm() {
       return
     }
     const alcoholPreferences = status === 'declined' ? [] : [...alcohol]
+    const savedPhotos = guest?.photos ?? emptySavedPhotos
+    const photoErr = validateRsvpPhotos(status, plusOne, photos, savedPhotos)
+    if (photoErr) {
+      setSubmitError(photoErr)
+      return
+    }
+
+    const buildFd = () => {
+      const fd = new FormData()
+      fd.append('name', nameTrim)
+      fd.append('status', status)
+      fd.append('plusOne', plusOne ? '1' : '0')
+      fd.append('comment', comment)
+      fd.append('alcoholPreferences', JSON.stringify(alcoholPreferences))
+      appendRsvpFiles(fd, status, plusOne, photos)
+      return fd
+    }
 
     if (!guest?.token) {
       const res = await fetch(apiUrl('/api/rsvp/open'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: nameTrim,
-          status,
-          plusOne,
-          comment,
-          alcoholPreferences,
-        }),
+        body: buildFd(),
       })
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string }
@@ -134,21 +160,39 @@ export function OpenRsvpForm() {
         /* */
       }
       setGuest(data.guest)
+      setPhotos(emptyRsvpPhotos())
       setEditing(false)
       window.dispatchEvent(new Event('wend-open-rsvp-saved'))
       return
     }
 
+    const fd = new FormData()
+    fd.append('status', status)
+    fd.append('plusOne', plusOne ? '1' : '0')
+    fd.append('comment', comment)
+    fd.append('alcoholPreferences', JSON.stringify(alcoholPreferences))
+    appendRsvpFiles(fd, status, plusOne, photos)
+
     const res = await fetch(apiUrl(`/api/rsvp/${guest.token}`), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, plusOne, comment, alcoholPreferences }),
+      body: fd,
     })
     if (!res.ok) {
-      setSubmitError('Не удалось сохранить')
+      const err = (await res.json().catch(() => ({}))) as { error?: string }
+      setSubmitError(err.error || 'Не удалось сохранить')
       return
     }
-    setGuest((g) => (g ? { ...g, hasResponded: true as const } : g))
+    try {
+      const sync = await fetch(apiUrl(`/api/guests/by-token/${encodeURIComponent(guest.token)}`))
+      if (sync.ok) {
+        setGuest((await sync.json()) as Guest)
+      } else {
+        setGuest((g) => (g ? { ...g, hasResponded: true as const } : g))
+      }
+    } catch {
+      setGuest((g) => (g ? { ...g, hasResponded: true as const } : g))
+    }
+    setPhotos(emptyRsvpPhotos())
     setEditing(false)
   }
 
@@ -289,6 +333,14 @@ export function OpenRsvpForm() {
           </button>
         </div>
       </div>
+
+      <RsvpPhotoFields
+        status={status}
+        plusOne={plusOne}
+        saved={guest?.photos ?? emptySavedPhotos}
+        value={photos}
+        onChange={setPhotos}
+      />
 
       <div
         className={`rounded-2xl border border-ink/10 bg-cream/50 p-3 sm:p-4 ${alcoholDisabled ? 'opacity-45' : ''}`}

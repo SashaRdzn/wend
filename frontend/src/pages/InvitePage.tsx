@@ -7,7 +7,17 @@ import {
   parseAlcoholPreferences,
 } from '../alcoholOptions'
 import { apiUrl } from '../apiUrl'
+import {
+  RsvpPhotoFields,
+  appendRsvpFiles,
+  emptyRsvpPhotos,
+  validateRsvpPhotos,
+  type RsvpPhotosFormState,
+  type RsvpSavedPhotos,
+} from '../RsvpPhotoFields'
 import { WeddingLanding } from '../WeddingLanding'
+
+const emptySavedPhotos: RsvpSavedPhotos = { self: false, plusOne: false, together: false }
 
 type Guest = {
   id: number
@@ -18,6 +28,7 @@ type Guest = {
   comment?: string | null
   alcoholPreferences?: AlcoholKey[]
   hasResponded?: boolean
+  photos?: RsvpSavedPhotos
 }
 
 const inviteStorageKey = (t: string) => `wend-invite-guest:${t}`
@@ -72,6 +83,8 @@ export function InvitePage() {
   const [alcohol, setAlcohol] = useState<Set<AlcoholKey>>(() =>
     formDefaultsFromGuest(token ? readInviteGuest(token) : null).alcohol,
   )
+  const [photos, setPhotos] = useState<RsvpPhotosFormState>(() => emptyRsvpPhotos())
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     if (!token) return
@@ -103,6 +116,10 @@ export function InvitePage() {
     }
   }, [token])
 
+  useEffect(() => {
+    if (!plusOne) setPhotos((p) => ({ ...p, plusOne: null, together: null }))
+  }, [plusOne])
+
   const toggleAlcohol = (key: AlcoholKey) => {
     setAlcohol((prev) => {
       const next = new Set(prev)
@@ -117,20 +134,55 @@ export function InvitePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError('')
     if (!token) return
     const alcoholPreferences = status === 'declined' ? [] : [...alcohol]
+    const savedPhotos = guest?.photos ?? emptySavedPhotos
+    const photoErr = validateRsvpPhotos(status, plusOne, photos, savedPhotos)
+    if (photoErr) {
+      setSubmitError(photoErr)
+      return
+    }
+
+    const fd = new FormData()
+    fd.append('status', status)
+    fd.append('plusOne', plusOne ? '1' : '0')
+    fd.append('comment', comment)
+    fd.append('alcoholPreferences', JSON.stringify(alcoholPreferences))
+    appendRsvpFiles(fd, status, plusOne, photos)
+
     const res = await fetch(apiUrl(`/api/rsvp/${token}`), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, plusOne, comment, alcoholPreferences }),
+      body: fd,
     })
-    if (!res.ok) return
-    setGuest((g) => {
-      if (!g) return g
-      const next = { ...g, hasResponded: true as const }
-      writeInviteGuest(token, next)
-      return next
-    })
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string }
+      setSubmitError(err.error || 'Не удалось сохранить')
+      return
+    }
+    try {
+      const sync = await fetch(apiUrl(`/api/guests/by-token/${encodeURIComponent(token)}`))
+      if (sync.ok) {
+        const next = (await sync.json()) as Guest
+        setGuest(next)
+        writeInviteGuest(token, next)
+      } else {
+        setGuest((g) => {
+          if (!g) return g
+          const next = { ...g, hasResponded: true as const }
+          writeInviteGuest(token, next)
+          return next
+        })
+      }
+    } catch {
+      setGuest((g) => {
+        if (!g) return g
+        const next = { ...g, hasResponded: true as const }
+        writeInviteGuest(token, next)
+        return next
+      })
+    }
+    setPhotos(emptyRsvpPhotos())
     setEditing(false)
   }
 
@@ -266,6 +318,14 @@ export function InvitePage() {
         </div>
       </div>
 
+      <RsvpPhotoFields
+        status={status}
+        plusOne={plusOne}
+        saved={guest?.photos ?? emptySavedPhotos}
+        value={photos}
+        onChange={setPhotos}
+      />
+
       <div
         className={`rounded-2xl border border-ink/10 bg-cream/50 p-3 sm:p-4 ${alcoholDisabled ? 'opacity-45' : ''}`}
       >
@@ -344,6 +404,8 @@ export function InvitePage() {
           onChange={(e) => setComment(e.target.value)}
         />
       </div>
+
+      {submitError ? <p className="text-xs text-red-800/90">{submitError}</p> : null}
 
       <button
         type="submit"

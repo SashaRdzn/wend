@@ -9,6 +9,8 @@ export const VENUE_ADDRESS_LINES = [
   '3-я линия, 301/3 (Строитель дачный пос.)',
 ] as const
 
+export const TWO_GIS_DIRECTIONS_URL = `https://2gis.kg/bishkek/directions/points/%7C${VENUE_LON}%2C${VENUE_LAT}`
+
 export const WEDDING_TELEGRAM_CHAT_URL = 'https://t.me/ruelii'
 
-export const WEDDING_HOST_EUGENE_CONTACT_URL = 'https://t.me/ruelii'
+export const WEDDING_HOST_EUGENE_CONTACT_URL = 'https://wa.me/996555961096'

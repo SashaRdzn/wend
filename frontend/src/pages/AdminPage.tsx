@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AdminGuestThumbs } from '../AdminGuestThumbs'
 import { ALCOHOL_KEYS, ALCOHOL_LABELS, type AlcoholKey } from '../alcoholOptions'
 import { apiUrl } from '../apiUrl'
 
@@ -23,10 +24,9 @@ type Guest = {
   plusOne: boolean
   comment: string | null
   alcoholPreferences: AlcoholKey[] | null
-  /** invite — админка / старые записи; open — анкета с главной */
   rsvpSource: 'invite' | 'open'
-  /** Персональная фраза пасхалки (как у гостя после игры), для сверки */
   eggPhrase: string
+  photos: { self: boolean; plusOne: boolean; together: boolean }
 }
 
 function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
@@ -68,6 +68,15 @@ function parseGuest(raw: unknown): Guest | null {
   const rsvpSource: Guest['rsvpSource'] =
     src === 'open' ? 'open' : 'invite'
   const eggPhrase = typeof o.eggPhrase === 'string' ? o.eggPhrase : ''
+  const ph = o.photos
+  const photos =
+    ph && typeof ph === 'object'
+      ? {
+          self: Boolean((ph as Record<string, unknown>).self),
+          plusOne: Boolean((ph as Record<string, unknown>).plusOne),
+          together: Boolean((ph as Record<string, unknown>).together),
+        }
+      : { self: false, plusOne: false, together: false }
   return {
     id,
     name,
@@ -78,6 +87,7 @@ function parseGuest(raw: unknown): Guest | null {
     alcoholPreferences: prefs.length ? prefs : null,
     rsvpSource,
     eggPhrase,
+    photos,
   }
 }
 
@@ -328,6 +338,8 @@ export function AdminPage() {
     return { total, counts, withAny, pctOfAll }
   }, [guests])
 
+  const authBearer = token ? `Bearer ${token}` : ''
+
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream p-3 text-ink sm:p-4">
@@ -559,6 +571,10 @@ export function AdminPage() {
                         {g.comment}
                       </p>
                     )}
+                    <div className="mt-2 border-t border-ink/10 pt-2">
+                      <p className="mb-1 text-[9px] uppercase tracking-wider text-ink/40">Фото RSVP</p>
+                      <AdminGuestThumbs authHeader={authBearer} inviteToken={g.token} photos={g.photos} />
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleDelete(g)}
@@ -580,6 +596,7 @@ export function AdminPage() {
                       <th className="px-3 py-1">Статус</th>
                       <th className="px-3 py-1">+1</th>
                       <th className="px-3 py-1">Напитки</th>
+                      <th className="px-3 py-1">Фото</th>
                       <th className="px-3 py-1">Ссылка</th>
                       <th className="px-3 py-1">Комментарий</th>
                       <th className="w-28 px-3 py-1">
@@ -629,6 +646,9 @@ export function AdminPage() {
                           {formatGuestAlcohol(g.alcoholPreferences) ?? (
                             <span className="text-ink/35">—</span>
                           )}
+                        </td>
+                        <td className="px-3 py-2 align-top">
+                          <AdminGuestThumbs authHeader={authBearer} inviteToken={g.token} photos={g.photos} />
                         </td>
                         <td className="max-w-[200px] px-3 py-2">
                           <div className="flex flex-col gap-1.5">

@@ -16,6 +16,7 @@ import {
 } from './EasterEgg'
 import { WeddingCalendar } from './WeddingCalendar'
 import {
+  TWO_GIS_DIRECTIONS_URL,
   VENUE_ADDRESS_LINES,
   VENUE_LAT,
   VENUE_LON,
@@ -37,7 +38,7 @@ import jointPhoto11 from './assets/pictures/joint_photo11.jpg'
 
 
 import dressFabric12 from './assets/pictures/dark.jpg'
-import dressFabric13 from './assets/pictures/dress13.JPG'
+import dressFabric13 from './assets/pictures/taip.png'
 import dressFabric14 from './assets/pictures/oliva.jpg'
 import dressFabric15 from './assets/pictures/mate.jpg'
 import dressFabric16 from './assets/pictures/yellow.jpg'
@@ -81,7 +82,7 @@ const DRESS_CODE_PALETTE: {
   label: string
 }[] = [
   { fabric: dressFabric12, color: '#57352C', label: 'Шоколад' },
-  { fabric: dressFabric13, color: '#9a867c', label: 'Трава зелееная зеленая' },
+  { fabric: dressFabric13, color: '#9a867c', label: 'Тайп' },
   { fabric: dressFabric15, color: '#6A7452', label: 'Мята' }, 
   { fabric: dressFabric14, color: '#A19C1F', label: 'Олива' },
   { fabric: dressFabric16, color: '#EFE69C', label: 'Лимон' },
@@ -130,7 +131,6 @@ const GALLERY_STRIP_IMAGES = [
 
 const YANDEX_MAP_ZOOM = 16
 const YANDEX_MAP_EMBED_SRC = `https://yandex.ru/map-widget/v1/?ll=${VENUE_LON}%2C${VENUE_LAT}&z=${YANDEX_MAP_ZOOM}&pt=${VENUE_LON}%2C${VENUE_LAT},pm2rdm`
-const YANDEX_MAP_ROUTE_URL = `https://yandex.ru/maps/?rtext=~${VENUE_LAT}%2C${VENUE_LON}`
 
 function useCountdown(to: Date) {
   const [left, setLeft] = useState({ d: 0, h: 0, m: 0, s: 0 })
@@ -164,23 +164,23 @@ type DayProgramItem = {
 const DAY_PROGRAM: DayProgramItem[] = [
   {
     time: '14:00-15:00',
-    title: 'Фото сессия',
-    text: 'Фото с фотографом.',
+    title: 'Bride & Groom moments',
+    text: 'живые эмоции и первые кадры нашего дня.',
   },
   {
     time: '15:00-15:30',
-    title: 'Встреча гостей',
-    text: 'Фуршет и фото-зона.',
+    title: 'Сбор гостей | Welcome Drinks',
+    text: 'Champagne • Bites • Photo Moments (Сбор гостей | Welcome Drinks Champagne, лёгкие закуски и photo moments) ',
   },
   {
     time: '15:40-16:00',
     title: 'Выход пары',
-    text: 'Выход и регистрация.',
+    text: 'Жених и невеста',
   },
   {
     time: '16:00',
-    title: 'Начало церемонии',
-    text: 'Церемония начинается.',
+    title: 'Церемония',
+    text: 'Торжественная часть.',
   },
   {
     time: '17:50-18:00',
@@ -189,8 +189,8 @@ const DAY_PROGRAM: DayProgramItem[] = [
   },
   {
     time: '20:00-20:20',
-    title: 'Танец с отцом и торт',
-    text: 'Танец и торт родителям.',
+    title: 'Танец и торт',
+    text: 'Танец и торт ',
   },
   {
     time: '20:50-21:30',
@@ -456,13 +456,13 @@ export function WeddingLanding({
                       <>
                         Уважаемый(ая) {guestName}, мы рады пригласить вас на наше главное событие —
                         уютную камерную свадьбу в кругу самых близких. На этом сайте вы найдёте все
-                        детали дня, помощь с дорогой и сможете ответить на приглашение в блоке ниже.
+                        детали дня, помощь с дорогой и сможете ответить на приглашение в блоке ниже, на сайте размещены пасхалки — скрытые элементы/задания. Найдите их и заберите свой приз на празднике!
                       </>
                     ) : (
                       <>
                         Мы рады пригласить вас на наше главное событие — уютную свадьбу в
                         кругу самых близких. На этом сайте вы найдёте все детали дня, помощь с дорогой
-                        и сможете ответить на приглашение в блоке ниже, а так же на сайте присутсвуют пасхалки:).
+                        и сможете ответить на приглашение в блоке ниже, на сайте размещены пасхалки — скрытые элементы/задания. Найдите их и заберите свой приз на празднике!
                       </>
                     )}
                   </p>
@@ -606,10 +606,10 @@ export function WeddingLanding({
             className="mt-10 space-y-5 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-12 sm:space-y-6 sm:pt-12"
           >
             <div className="text-center sm:text-left">
-              <h2 className="font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
+              <h2 className="font-display text-[25px] text-xl text-champagne sm:text-2xl lg:text-3xl">
                 Место проведения
               </h2>
-              <p className="mt-2 text-xs text-ink/60 sm:text-sm">
+              <p className="mt-2 text-sm font-medium text-ink/70 sm:text-[10px] sm:leading-snug">
                 Ориентир на карте и адрес ниже.
               </p>
             </div>
@@ -623,11 +623,11 @@ export function WeddingLanding({
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
-            <div className="rounded-2xl border border-ink/10 bg-white/60 px-4 py-4 text-sm text-ink/80 sm:rounded-3xl sm:px-6 sm:py-5">
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink/45">
+            <div className="rounded-2xl border border-ink/10 bg-white/60 px-4 py-4 sm:rounded-3xl sm:px-6 sm:py-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink/55 sm:text-[12px]">
                 Адрес
               </p>
-              <address className="mt-3 not-italic leading-relaxed">
+              <address className="mt-3 not-italic text-[13px] font-medium leading-relaxed text-ink/80 sm:text-[16px]">
                 {VENUE_ADDRESS_LINES.map((line) => (
                   <span key={line} className="block">
                     {line}
@@ -636,7 +636,7 @@ export function WeddingLanding({
               </address>
             </div>
             <a
-              href={YANDEX_MAP_ROUTE_URL}
+              href={TWO_GIS_DIRECTIONS_URL}
               target="_blank"
               rel="noreferrer noopener"
               className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-4 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:px-5"
@@ -654,7 +654,7 @@ export function WeddingLanding({
             id="schedule"
             className="mt-12 space-y-6 border-t border-ink/10 pt-10 sm:mt-16 sm:space-y-8 sm:pt-12"
           >
-            <h2 className="font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
+            <h2 className="font-display text-[25px] text-xl text-champagne sm:text-2xl lg:text-3xl">
               Как пройдёт день
             </h2>
 
@@ -766,13 +766,13 @@ export function WeddingLanding({
             className={`dress-code mt-12 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-16 sm:pt-12${dressCodeInView ? ' dress-code--visible' : ''}`}
           >
             <div className="mx-auto max-w-2xl text-center">
-              <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink/45 sm:text-xs sm:tracking-[0.32em]">
+              <p className="text-[15px] font-semibold uppercase tracking-[0.28em] text-ink/55 sm:text-xs sm:tracking-[0.32em]">
                 Дресс-код
               </p>
-              <h2 className="mt-3 font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
+              <h2 className="mt-3 text-[20px] font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
                 Как одеться
               </h2>
-              <p className="mt-4 text-sm leading-relaxed text-ink/75 sm:text-base">
+              <p className="mt-4 text-[15px] leading-relaxed text-ink/75 sm:text-[16px] sm:leading-relaxed">
                 Для нас главное — ваше присутствие! Но мы будем рады, если в своих нарядах вы
                 поддержите цветовую гамму и общую стилистику свадьбы: натуральные оттенки, мягкий
                 блеск атласа или шёлка, без ярких неоновых акцентов.
@@ -780,11 +780,8 @@ export function WeddingLanding({
             </div>
 
             <div className="mx-auto mt-8 max-w-xl">
-              <p className="text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ink/50">
+              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-ink/55 sm:text-[12px]">
                 Цвет и ткань
-              </p>
-              <p className="mt-2 text-center text-xs text-ink/60 sm:text-sm">
-                Сверху — фактура ткани, снизу — оттенок палитры.
               </p>
               <div className="mt-6 grid grid-cols-5 gap-2 sm:mt-8 sm:gap-4">
                 {DRESS_CODE_PALETTE.map((item, step) => (
@@ -807,7 +804,7 @@ export function WeddingLanding({
                       style={{ backgroundColor: item.color }}
                       aria-hidden
                     />
-                    <span className="max-w-[4.5rem] text-center text-[9px] leading-tight text-ink/55 sm:max-w-none sm:text-[10px]">
+                    <span className="max-w-[5rem] text-center text-[11px] font-medium leading-snug text-ink/65 sm:max-w-none sm:text-[12px]">
                       {item.label}
                     </span>
                   </div>
@@ -817,7 +814,7 @@ export function WeddingLanding({
 
             <div className="mx-auto mt-10 max-w-3xl sm:mt-12">
               <p
-                className="dress-code-reveal-target text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ink/50"
+                className="dress-code-reveal-target text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-ink/55 sm:text-[12px]"
                 style={{ '--reveal-step': DRESS_CODE_PALETTE.length } as CSSProperties}
               >
                 Вдохновение
@@ -842,28 +839,39 @@ export function WeddingLanding({
               {DRESS_CODE_GALLERY_REST.length > 0 ? (
                 <>
                   {dressGalleryExpanded ? (
-                    <div className="dress-code-gallery mt-4">
-                      {DRESS_CODE_GALLERY_REST.map((src, i) => (
-                        <div
-                          key={`dress-gallery-rest-${i}`}
-                          className="dress-code-gallery-cell dress-code-reveal-target overflow-hidden rounded-xl shadow-md shadow-ink/5 sm:rounded-2xl"
-                          style={
-                            {
-                              '--reveal-step':
-                                DRESS_CODE_PALETTE.length + DRESS_CODE_GALLERY_FIRST.length + i,
-                            } as CSSProperties
-                          }
+                    <>
+                      <div className="dress-code-gallery mt-4">
+                        {DRESS_CODE_GALLERY_REST.map((src, i) => (
+                          <div
+                            key={`dress-gallery-rest-${i}`}
+                            className="dress-code-gallery-cell dress-code-reveal-target overflow-hidden rounded-xl shadow-md shadow-ink/5 sm:rounded-2xl"
+                            style={
+                              {
+                                '--reveal-step':
+                                  DRESS_CODE_PALETTE.length + DRESS_CODE_GALLERY_FIRST.length + i,
+                              } as CSSProperties
+                            }
+                          >
+                            <img
+                              src={src}
+                              alt=""
+                              className="dress-code-gallery-img"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex justify-center">
+                        <button
+                          type="button"
+                          className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-ink/10 bg-white/60 px-6 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98]"
+                          onClick={() => setDressGalleryExpanded(false)}
                         >
-                          <img
-                            src={src}
-                            alt=""
-                            className="dress-code-gallery-img"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                          Скрыть
+                        </button>
+                      </div>
+                    </>
                   ) : null}
                   {!dressGalleryExpanded ? (
                     <div className="mt-4 flex justify-center">
@@ -901,7 +909,7 @@ export function WeddingLanding({
                 rel="noreferrer noopener"
                 className="mt-6 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-5 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:mt-8 sm:px-6"
               >
-                вступить в чат
+                Вступить в чат
               </a>
             </div>
           </section>
@@ -918,7 +926,7 @@ export function WeddingLanding({
                 Владимир
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-ink/75 sm:text-base">
-                Если у вас есть вопросы или идея для сюрприза, напишите нашему ведущему Владимиру, он с радостью поможет и поддержит любую инициативу, которая сделает наш день ещё ярче!
+                Если у вас есть вопросы или идея для сюрприза, напишите нашему ведущему-организатору Владимиру, он с радостью поможет и поддержит любую инициативу, которая сделает наш день ещё ярче!
               </p>
               <a
                 href={WEDDING_HOST_EUGENE_CONTACT_URL}
@@ -926,7 +934,7 @@ export function WeddingLanding({
                 rel="noreferrer noopener"
                 className="mt-6 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-5 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:mt-8 sm:px-6"
               >
-                написать Владимиру
+                Написать Владимиру
               </a>
             </div>
           </section>

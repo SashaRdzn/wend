@@ -74,7 +74,6 @@ body {
   animation-play-state: paused;
 }
 
-/* Локальные фото: меньше «зерна» при масштабе и анимации */
 .intro-collage-img,
 .gallery-strip-img {
   backface-visibility: hidden;
@@ -97,7 +96,6 @@ body {
   }
 }
 
-/* Дресс-код: плавное появление при скролле (см. секция #dress-code) */
 .dress-code-reveal-target {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
@@ -122,7 +120,6 @@ body {
   }
 }
 
-/* Две колонки, высоты по натуральному соотношению сторон фото («ломаная» сетка) */
 .dress-code-gallery {
   column-count: 2;
   column-gap: 0.5rem;

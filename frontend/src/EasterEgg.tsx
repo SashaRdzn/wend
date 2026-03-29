@@ -47,7 +47,6 @@ type EggWatermelonModalProps = {
   onClose: () => void
 }
 
-/** Вторая пасхалка — `public/egg-watermelon.png`. */
 export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
   if (!open) return null
   return (
@@ -89,7 +88,6 @@ type EggThirdPlaceholderModalProps = {
   onClose: () => void
 }
 
-/** Третья пасхалка — пока заглушка. */
 export function EggThirdPlaceholderModal({ open, onClose }: EggThirdPlaceholderModalProps) {
   if (!open) return null
   return (

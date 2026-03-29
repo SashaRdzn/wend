@@ -26,3 +26,4 @@ npm-debug.log*
 # SQLite (создаётся при первом запуске бэкенда)
 backend/wedding.sqlite
 backend/wedding.sqlite-journal
+backend/data/
