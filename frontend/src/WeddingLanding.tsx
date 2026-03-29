@@ -15,6 +15,8 @@ import {
   VENUE_LAT,
   VENUE_LON,
   WEDDING_DATE,
+  WEDDING_HOST_EUGENE_CONTACT_URL,
+  WEDDING_TELEGRAM_CHAT_URL,
 } from './weddingConstants'
 import jointPhoto1 from './assets/pictures/joint_photo1.jpg'
 import jointPhoto2 from './assets/pictures/joint_photo2.jpg'
@@ -30,7 +32,6 @@ import jointPhoto11 from './assets/pictures/joint_photo11.jpg'
 
 import dressCodeMain from './assets/pictures/dress.JPG'
 import dressCode1 from './assets/pictures/dress1.JPG'
-import dressCode2 from './assets/pictures/dress2.JPG'
 import dressCode3 from './assets/pictures/dress3.JPG'
 import dressCode4 from './assets/pictures/dress4.JPG'
 import dressCode5 from './assets/pictures/dress5.JPG'
@@ -72,25 +73,29 @@ const DRESS_CODE_PALETTE: {
   { fabric: dressFabric16, color: '#f2ebe0', label: 'Крем' },
 ]
 
-const DRESS_CODE_GALLERY = [
+/** Начальный список: 0, 1, 4, 15, 11, 28, 16, 17 (dress2 не используем) */
+const DRESS_CODE_GALLERY_FIRST = [
   dressCodeMain,
   dressCode1,
-  dressCode2,
-  dressCode3,
   dressCode4,
+  dressFabric15,
+  dressCode11,
+  dressCode28,
+  dressFabric16,
+  dressCode17,
+] as const
+
+const DRESS_CODE_GALLERY_REST = [
+  dressCode3,
   dressCode5,
   dressCode6,
   dressCode7,
   dressCode8,
   dressCode9,
   dressCode10,
-  dressCode11,
   dressFabric12,
   dressFabric13,
   dressFabric14,
-  dressFabric15,
-  dressFabric16,
-  dressCode17,
   dressCode18,
   dressCode19,
   dressCode20,
@@ -101,7 +106,6 @@ const DRESS_CODE_GALLERY = [
   dressCode25,
   dressCode26,
   dressCode27,
-  dressCode28,
   dressCode29,
 ] as const
 
@@ -227,6 +231,7 @@ export function WeddingLanding({
 
   const dressCodeSectionRef = useRef<HTMLElement | null>(null)
   const [dressCodeInView, setDressCodeInView] = useState(false)
+  const [dressGalleryExpanded, setDressGalleryExpanded] = useState(false)
 
   useLayoutEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -241,16 +246,12 @@ export function WeddingLanding({
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return
-        // Позже по скроллу: заметная часть секции уже в «живой» зоне экрана (не в самом низу вьюпорта).
-        if (entry.intersectionRatio >= 0.14) {
-          setDressCodeInView(true)
-          io.disconnect()
-        }
+        // Любая видимая часть секции: для длинной галереи intersectionRatio относится ко
+        // всей высоте секции и часто < 0.14 — иначе анимация никогда не включалась бы.
+        setDressCodeInView(true)
+        io.disconnect()
       },
-      {
-        threshold: [0, 0.05, 0.1, 0.14, 0.2, 0.3, 0.45, 0.6],
-        rootMargin: '0px 0px -32% 0px',
-      }
+      { rootMargin: '80px 0px 80px 0px', threshold: 0 }
     )
     io.observe(el)
     return () => io.disconnect()
@@ -763,26 +764,118 @@ export function WeddingLanding({
             </div>
 
             <div className="mx-auto mt-10 max-w-3xl sm:mt-12">
-              <p className="text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ink/50">
+              <p
+                className="dress-code-reveal-target text-center text-[10px] font-medium uppercase tracking-[0.22em] text-ink/50"
+                style={{ '--reveal-step': DRESS_CODE_PALETTE.length } as CSSProperties}
+              >
                 Вдохновение
               </p>
-              <div className="dress-code-gallery mt-4 grid grid-cols-2 gap-2 sm:gap-3">
-                {DRESS_CODE_GALLERY.map((src, i) => (
+              <div className="dress-code-gallery mt-4">
+                {DRESS_CODE_GALLERY_FIRST.map((src, i) => (
                   <div
-                    key={`dress-gallery-${i}`}
+                    key={`dress-gallery-first-${i}`}
                     className="dress-code-gallery-cell dress-code-reveal-target overflow-hidden rounded-xl shadow-md shadow-ink/5 sm:rounded-2xl"
                     style={{ '--reveal-step': DRESS_CODE_PALETTE.length + i } as CSSProperties}
                   >
                     <img
                       src={src}
                       alt=""
-                      className="dress-code-gallery-img h-auto w-full object-cover"
+                      className="dress-code-gallery-img"
                       loading="lazy"
                       decoding="async"
                     />
                   </div>
                 ))}
               </div>
+              {DRESS_CODE_GALLERY_REST.length > 0 ? (
+                <>
+                  {dressGalleryExpanded ? (
+                    <div className="dress-code-gallery mt-4">
+                      {DRESS_CODE_GALLERY_REST.map((src, i) => (
+                        <div
+                          key={`dress-gallery-rest-${i}`}
+                          className="dress-code-gallery-cell dress-code-reveal-target overflow-hidden rounded-xl shadow-md shadow-ink/5 sm:rounded-2xl"
+                          style={
+                            {
+                              '--reveal-step':
+                                DRESS_CODE_PALETTE.length + DRESS_CODE_GALLERY_FIRST.length + i,
+                            } as CSSProperties
+                          }
+                        >
+                          <img
+                            src={src}
+                            alt=""
+                            className="dress-code-gallery-img"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {!dressGalleryExpanded ? (
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        type="button"
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-ink/10 bg-white/60 px-6 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98]"
+                        onClick={() => setDressGalleryExpanded(true)}
+                      >
+                        Ещё
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          </section>
+
+          <section
+            id="wedding-chat"
+            className="mt-12 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-16 sm:pt-12"
+          >
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink/45 sm:text-xs sm:tracking-[0.32em]">
+                Телеграм
+              </p>
+              <h2 className="mt-3 font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
+                Свадебный чат
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-ink/75 sm:text-base">
+                Дорогие, мы создали телеграм-чат, в котором можно навалить лютого кринжа))
+              </p>
+              <a
+                href={WEDDING_TELEGRAM_CHAT_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-6 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-5 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:mt-8 sm:px-6"
+              >
+                вступить в чат
+              </a>
+            </div>
+          </section>
+
+          <section
+            id="host-contact"
+            className="mt-12 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-16 sm:pt-12"
+          >
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink/45 sm:text-xs sm:tracking-[0.32em]">
+                Ведущий
+              </p>
+              <h2 className="mt-3 font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
+                Владимир
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-ink/75 sm:text-base">
+                Если у вас есть вопросы или идея для сюрприза, напишите нашему ведущему Владимиру, он с радостью поможет и поддержит любую инициативу, которая сделает наш день ещё ярче!
+              </p>
+              <a
+                href={WEDDING_HOST_EUGENE_CONTACT_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-6 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-5 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:mt-8 sm:px-6"
+              >
+                написать Владимиру
+              </a>
             </div>
           </section>
 
@@ -793,7 +886,7 @@ export function WeddingLanding({
             <h2 className="font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
               Подтвердите участие
             </h2>
-
+                <p className=' text-x font-display'> Пожалуйста запоните анкету ниже и подтвердите свое присутствие до 01.05.2026 чтобы мы могли спланировать наше торжество наилучшим образом</p>
             {rsvpSlot ?? (
               <form
                 className="grid gap-3 rounded-2xl border border-ink/12 bg-white/70 p-4 text-[11px] text-ink/75 backdrop-blur-lg sm:grid-cols-2 sm:gap-4 sm:rounded-3xl sm:p-6 sm:text-xs"

@@ -1,13 +1,14 @@
-/** Единая дата свадьбы для героя, календаря и обратного отсчёта */
-export const WEDDING_DATE = new Date('2026-06-06T16:00:00')
+export const WEDDING_DATE = new Date('2026-06-06T15:00:00')
 
-/** Координаты места проведения (долгота/широта) */
 export const VENUE_LON = 74.646246
 export const VENUE_LAT = 42.788006
 
-/** Примерный адрес для блока «Место» (замените на настоящий) */
 export const VENUE_ADDRESS_LINES = [
   'Кыргызстан, Бишкек',
   'Гостевой дом Alibaba',
   '3-я линия, 301/3 (Строитель дачный пос.)',
 ] as const
+
+export const WEDDING_TELEGRAM_CHAT_URL = 'https://t.me/ruelii'
+
+export const WEDDING_HOST_EUGENE_CONTACT_URL = 'https://t.me/ruelii'

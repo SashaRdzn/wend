@@ -122,12 +122,37 @@ body {
   }
 }
 
+/* Две колонки, высоты по натуральному соотношению сторон фото («ломаная» сетка) */
+.dress-code-gallery {
+  column-count: 2;
+  column-gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .dress-code-gallery {
+    column-gap: 0.75rem;
+  }
+}
+
+.dress-code-gallery-cell {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+@media (min-width: 640px) {
+  .dress-code-gallery-cell {
+    margin-bottom: 0.75rem;
+  }
+}
+
 .dress-code-gallery-img {
+  display: block;
+  width: 100%;
+  height: auto;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: translateZ(0);
   image-rendering: auto;
-  vertical-align: middle;
 }
 
 .countdown-block {
