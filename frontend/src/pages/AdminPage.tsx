@@ -573,7 +573,12 @@ export function AdminPage() {
                     )}
                     <div className="mt-2 border-t border-ink/10 pt-2">
                       <p className="mb-1 text-[9px] uppercase tracking-wider text-ink/40">Фото RSVP</p>
-                      <AdminGuestThumbs authHeader={authBearer} inviteToken={g.token} photos={g.photos} />
+                      <AdminGuestThumbs
+                        authHeader={authBearer}
+                        inviteToken={g.token}
+                        guestName={g.name}
+                        photos={g.photos}
+                      />
                     </div>
                     <button
                       type="button"
@@ -648,7 +653,12 @@ export function AdminPage() {
                           )}
                         </td>
                         <td className="px-3 py-2 align-top">
-                          <AdminGuestThumbs authHeader={authBearer} inviteToken={g.token} photos={g.photos} />
+                          <AdminGuestThumbs
+                            authHeader={authBearer}
+                            inviteToken={g.token}
+                            guestName={g.name}
+                            photos={g.photos}
+                          />
                         </td>
                         <td className="max-w-[200px] px-3 py-2">
                           <div className="flex flex-col gap-1.5">
