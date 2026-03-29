@@ -30,7 +30,7 @@ import jointPhoto11 from './assets/pictures/joint_photo11.jpg'
 
 import dressCodeMain from './assets/pictures/dress.JPG'
 import dressCode1 from './assets/pictures/dress1.JPG'
-// import dressCode2 from './assets/pictures/dress2.JPG'
+import dressCode2 from './assets/pictures/dress2.JPG'
 import dressCode3 from './assets/pictures/dress3.JPG'
 import dressCode4 from './assets/pictures/dress4.JPG'
 import dressCode5 from './assets/pictures/dress5.JPG'
@@ -50,6 +50,14 @@ import dressCode18 from './assets/pictures/dress18.JPG'
 import dressCode19 from './assets/pictures/dress19.JPG'
 import dressCode20 from './assets/pictures/dress20.JPG'
 import dressCode21 from './assets/pictures/dress21.JPG'
+import dressCode22 from './assets/pictures/dress22.JPG'
+import dressCode23 from './assets/pictures/dress23.JPG'
+import dressCode24 from './assets/pictures/dress24.JPG'
+import dressCode25 from './assets/pictures/dress25.JPG'
+import dressCode26 from './assets/pictures/dress26.JPG'
+import dressCode27 from './assets/pictures/dress27.JPG'
+import dressCode28 from './assets/pictures/dress28.JPG'
+import dressCode29 from './assets/pictures/dress29.JPG'
 
 
 const DRESS_CODE_PALETTE: {
@@ -67,7 +75,7 @@ const DRESS_CODE_PALETTE: {
 const DRESS_CODE_GALLERY = [
   dressCodeMain,
   dressCode1,
-  // dressCode2,
+  dressCode2,
   dressCode3,
   dressCode4,
   dressCode5,
@@ -77,11 +85,24 @@ const DRESS_CODE_GALLERY = [
   dressCode9,
   dressCode10,
   dressCode11,
+  dressFabric12,
+  dressFabric13,
+  dressFabric14,
+  dressFabric15,
+  dressFabric16,
   dressCode17,
   dressCode18,
   dressCode19,
   dressCode20,
   dressCode21,
+  dressCode22,
+  dressCode23,
+  dressCode24,
+  dressCode25,
+  dressCode26,
+  dressCode27,
+  dressCode28,
+  dressCode29,
 ] as const
 
 const GALLERY_STRIP_IMAGES = [
