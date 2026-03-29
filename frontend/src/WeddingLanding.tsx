@@ -55,6 +55,11 @@ import dressCode8 from './assets/pictures/dress8.JPG'
 import dressCode9 from './assets/pictures/dress9.JPG'
 import dressCode10 from './assets/pictures/dress10.JPG'
 import dressCode11 from './assets/pictures/dress11.JPG'
+import dressCode12 from './assets/pictures/dress12.JPG'
+import dressCode13 from './assets/pictures/dress13.JPG'
+import dressCode14 from './assets/pictures/dress14.JPG'
+import dressCode15 from './assets/pictures/dress15.JPG'
+import dressCode16 from './assets/pictures/dress16.JPG'
 import dressCode17 from './assets/pictures/dress17.JPG'
 import dressCode18 from './assets/pictures/dress18.JPG'
 import dressCode19 from './assets/pictures/dress19.JPG'
@@ -86,10 +91,10 @@ const DRESS_CODE_GALLERY_FIRST = [
   dressCodeMain,
   dressCode1,
   dressCode4,
-  dressFabric15,
+  dressCode15,
   dressCode11,
   dressCode28,
-  dressFabric16,
+  dressCode16,
   dressCode17,
 ] as const
 
@@ -101,9 +106,9 @@ const DRESS_CODE_GALLERY_REST = [
   dressCode8,
   dressCode9,
   dressCode10,
-  dressFabric12,
-  dressFabric13,
-  dressFabric14,
+  dressCode12,
+  dressCode13,
+  dressCode14,
   dressCode18,
   dressCode19,
   dressCode20,
@@ -254,6 +259,28 @@ export function WeddingLanding({
   const [eggThirdDone, setEggThirdDone] = useState(false)
 
   const eggGameUnlocked = eggFirstDone && eggWatermelonDone && eggThirdDone
+
+  const [openSiteInviteToken, setOpenSiteInviteToken] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem('wend-open-rsvp-token')
+    } catch {
+      return null
+    }
+  })
+
+  useEffect(() => {
+    const sync = () => {
+      try {
+        setOpenSiteInviteToken(sessionStorage.getItem('wend-open-rsvp-token'))
+      } catch {
+        setOpenSiteInviteToken(null)
+      }
+    }
+    window.addEventListener('wend-open-rsvp-saved', sync)
+    return () => window.removeEventListener('wend-open-rsvp-saved', sync)
+  }, [])
+
+  const eggInviteToken = inviteToken ?? openSiteInviteToken ?? null
 
   useLayoutEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -972,7 +999,7 @@ export function WeddingLanding({
           </section>
 
           {eggGameUnlocked ? (
-            <EggHeartGameSection inviteToken={inviteToken ?? null} />
+            <EggHeartGameSection inviteToken={eggInviteToken} />
           ) : null}
 
           <footer className="mt-14 border-t border-ink/10 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 text-center sm:mt-16 sm:pt-10">

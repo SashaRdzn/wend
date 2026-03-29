@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.tsx'
 import { AdminPage } from './pages/AdminPage.tsx'
 import { InvitePage } from './pages/InvitePage.tsx'
+import { NotFoundPage } from './pages/NotFoundPage.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<App />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/invite/:token" element={<InvitePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </CurtainReveal>
     </BrowserRouter>

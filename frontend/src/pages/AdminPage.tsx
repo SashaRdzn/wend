@@ -23,6 +23,8 @@ type Guest = {
   plusOne: boolean
   comment: string | null
   alcoholPreferences: AlcoholKey[] | null
+  /** invite — админка / старые записи; open — анкета с главной */
+  rsvpSource: 'invite' | 'open'
 }
 
 function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
@@ -60,6 +62,9 @@ function parseGuest(raw: unknown): Guest | null {
   const plusOne = Boolean(o.plusOne)
   const comment = o.comment === null || typeof o.comment === 'string' ? o.comment : null
   const prefs = parseAlcoholPrefs(o.alcoholPreferences)
+  const src = o.rsvpSource
+  const rsvpSource: Guest['rsvpSource'] =
+    src === 'open' ? 'open' : 'invite'
   return {
     id,
     name,
@@ -68,6 +73,7 @@ function parseGuest(raw: unknown): Guest | null {
     plusOne,
     comment,
     alcoholPreferences: prefs.length ? prefs : null,
+    rsvpSource,
   }
 }
 
@@ -476,7 +482,18 @@ export function AdminPage() {
                     key={g.id}
                     className="rounded-xl border border-ink/8 bg-cream/80 p-3"
                   >
-                    <div className="font-medium text-champagne">{g.name}</div>
+                    <div className="font-medium text-champagne">
+                      {g.name}
+                      {g.rsvpSource === 'open' ? (
+                        <span className="ml-2 rounded-md bg-sage/25 px-1.5 py-0.5 text-[10px] font-normal text-moss">
+                          сайт
+                        </span>
+                      ) : (
+                        <span className="ml-2 rounded-md bg-cream px-1.5 py-0.5 text-[10px] font-normal text-ink/50">
+                          ссылка
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-1 text-ink/55">
                       {g.status === 'accepted' ? 'Придёт' : g.status === 'declined' ? 'Не придёт' : 'Не ответил'}
                       {g.plusOne && ' · +1'}
@@ -523,6 +540,7 @@ export function AdminPage() {
                   <thead className="text-[11px] uppercase tracking-[0.16em] text-ink/45">
                     <tr>
                       <th className="px-3 py-1">Имя</th>
+                      <th className="px-3 py-1">Откуда</th>
                       <th className="px-3 py-1">Статус</th>
                       <th className="px-3 py-1">+1</th>
                       <th className="px-3 py-1">Напитки</th>
@@ -540,6 +558,9 @@ export function AdminPage() {
                         className="rounded-2xl border border-ink/8 bg-cream/80"
                       >
                         <td className="px-3 py-2 text-sm text-champagne">{g.name}</td>
+                        <td className="px-3 py-2 text-[11px] text-ink/60">
+                          {g.rsvpSource === 'open' ? 'Главная' : 'Админка'}
+                        </td>
                         <td className="px-3 py-2">
                           {g.status === 'accepted'
                             ? 'Придёт'

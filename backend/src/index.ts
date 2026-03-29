@@ -109,6 +109,9 @@ async function initDb(): Promise<SqliteAsync> {
         `UPDATE guests SET rsvpAt = updatedAt WHERE rsvpAt IS NULL AND updatedAt != createdAt`,
       )
     }
+    if (!cols.some((c) => c.name === 'rsvpSource')) {
+      await db.exec('ALTER TABLE guests ADD COLUMN rsvpSource TEXT')
+    }
     dbMigrated = true
   }
   return db
@@ -142,13 +145,14 @@ app.get('/api/guests', authMiddleware, async (_req, res) => {
   try {
     const db = await initDb()
     const guests = await db.all(
-      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests ORDER BY createdAt ASC',
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences, rsvpSource FROM guests ORDER BY createdAt ASC',
     )
     res.json(
       guests.map((g) => ({
         ...g,
         plusOne: !!g.plusOne,
         alcoholPreferences: parseAlcoholJson(g.alcoholPreferences as string | null),
+        rsvpSource: (g as { rsvpSource?: string | null }).rsvpSource ?? null,
       })),
     )
   } catch (e) {
@@ -170,7 +174,7 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
     const token = generateToken()
     const now = new Date().toISOString()
     const result = await db.run(
-      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, rsvpAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, rsvpAt, createdAt, updatedAt, rsvpSource) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       name.trim(),
       token,
       'pending',
@@ -180,6 +184,7 @@ app.post('/api/guests', authMiddleware, async (req, res) => {
       null,
       now,
       now,
+      'invite',
     )
     const created = await db.get<{
       id: number
@@ -318,6 +323,77 @@ app.get('/api/guests/by-token/:token', async (req, res) => {
       stack: e instanceof Error ? e.stack : undefined,
     })
     res.status(500).json({ error: 'Failed to load guest' })
+  }
+})
+
+/** Публичная анкета с главной страницы (без персональной ссылки). */
+app.post('/api/rsvp/open', async (req, res) => {
+  const { name, status, plusOne, comment, alcoholPreferences } = req.body as {
+    name?: string
+    status?: string
+    plusOne?: boolean
+    comment?: string
+    alcoholPreferences?: unknown
+  }
+  if (typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ error: 'Укажите имя' })
+  }
+  if (!status || !['accepted', 'declined', 'pending'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' })
+  }
+  const alcoholJson = normalizeAlcoholPreferences(alcoholPreferences)
+  try {
+    const db = await initDb()
+    const token = generateToken()
+    const now = new Date().toISOString()
+    const result = await db.run(
+      'INSERT INTO guests (name, token, status, plusOne, comment, alcoholPreferences, rsvpAt, createdAt, updatedAt, rsvpSource) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      name.trim(),
+      token,
+      status,
+      plusOne ? 1 : 0,
+      comment ?? null,
+      alcoholJson,
+      now,
+      now,
+      now,
+      'open',
+    )
+    const created = await db.get<{
+      id: number
+      name: string
+      token: string
+      status: string
+      plusOne: number
+      comment: string | null
+      alcoholPreferences: string | null
+    }>(
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences FROM guests WHERE id = ?',
+      result.lastID,
+    )
+    if (!created) {
+      return res.status(500).json({ error: 'Failed to read guest' })
+    }
+    res.status(201).json({
+      ok: true,
+      token: created.token,
+      guest: {
+        id: created.id,
+        name: created.name,
+        token: created.token,
+        status: created.status,
+        plusOne: !!created.plusOne,
+        comment: created.comment,
+        alcoholPreferences: parseAlcoholJson(created.alcoholPreferences),
+        hasResponded: true,
+      },
+    })
+  } catch (e) {
+    logger.error('api_rsvp_open_failed', {
+      err: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    })
+    res.status(500).json({ error: 'Failed to save RSVP' })
   }
 })
 
