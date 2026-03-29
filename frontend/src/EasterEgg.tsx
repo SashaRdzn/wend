@@ -27,9 +27,6 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
             loading="eager"
           />
         </div>
-        <p className="mt-4 text-center text-xs leading-relaxed text-ink/70 sm:text-sm">
-          Загляните в самый низ страницы — там тоже есть что найти.
-        </p>
         <button
           type="button"
           className="mt-6 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
@@ -68,9 +65,6 @@ export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
             loading="eager"
           />
         </div>
-        <p className="mt-3 text-center text-[10px] leading-relaxed text-ink/55 sm:text-[11px]">
-          Может, стоит посмотреть наверх?
-        </p>
         <button
           type="button"
           className="mt-6 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
@@ -83,83 +77,135 @@ export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
   )
 }
 
-type EggThirdPlaceholderModalProps = {
+export const HEART_JUMP_GOAL = 7
+export const HEART_TOTAL = 8
+
+type EggPersistentModalProps = {
   open: boolean
   onClose: () => void
+  inviteToken?: string | null
+  prizeEligible: boolean
 }
 
-export function EggThirdPlaceholderModal({ open, onClose }: EggThirdPlaceholderModalProps) {
+export function EggPersistentModal({ open, onClose, inviteToken, prizeEligible }: EggPersistentModalProps) {
+  const [phrase, setPhrase] = useState<string | null>(null)
+  const [phraseError, setPhraseError] = useState<'no-token' | 'fetch' | null>(null)
+  const [loadingPhrase, setLoadingPhrase] = useState(false)
+  const fetchGen = useRef(0)
+
+  useEffect(() => {
+    if (!open) {
+      setPhrase(null)
+      setPhraseError(null)
+      setLoadingPhrase(false)
+      return
+    }
+    if (!prizeEligible) return
+    const t = inviteToken?.trim()
+    if (!t) {
+      setPhraseError('no-token')
+      return
+    }
+    const gen = ++fetchGen.current
+    setLoadingPhrase(true)
+    setPhrase(null)
+    setPhraseError(null)
+    fetch(apiUrl(`/api/egg/prize/${encodeURIComponent(t)}`))
+      .then(async (r) => {
+        if (!r.ok) throw new Error('bad')
+        const j = (await r.json()) as { phrase?: string }
+        if (j.phrase) return j.phrase
+        throw new Error('bad')
+      })
+      .then((p) => {
+        if (fetchGen.current === gen) setPhrase(p)
+      })
+      .catch(() => {
+        if (fetchGen.current === gen) setPhraseError('fetch')
+      })
+      .finally(() => {
+        if (fetchGen.current === gen) setLoadingPhrase(false)
+      })
+  }, [open, prizeEligible, inviteToken])
+
   if (!open) return null
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-ink/45 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal
+      aria-labelledby="egg-persistent-title"
     >
-      <div className="w-full max-w-md rounded-2xl border border-ink/10 bg-cream p-6 shadow-2xl sm:p-8">
-        <p className="text-center text-sm text-ink/70">Здесь скоро будет сюрприз — мы ещё думаем.</p>
+      <div className="max-h-[min(92vh,560px)] w-full max-w-md overflow-y-auto rounded-2xl border border-ink/10 bg-cream p-5 shadow-2xl sm:p-6">
+        <p
+          id="egg-persistent-title"
+          className="text-center text-sm font-medium leading-snug text-ink sm:text-base"
+        >
+          Да вы настойчивый человек
+        </p>
+        <div className="mt-4 text-center text-sm leading-relaxed text-ink/75">
+          {!prizeEligible ? (
+            <p>Секретный код ещё не готов — сначала соберите полный набор.</p>
+          ) : loadingPhrase ? (
+            <p className="text-ink/65">Загружаем ваш персональный код…</p>
+          ) : phrase ? (
+            <>
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink/45">
+                Ваш секретный код
+              </p>
+              <p className="mt-3 break-all font-mono text-lg font-semibold tracking-tight text-moss sm:text-xl">
+                {phrase}
+              </p>
+              <p className="mt-3 text-xs text-ink/60">
+                Сохраните его — по этому коду мы сможем выдать приз именно вам.
+              </p>
+            </>
+          ) : phraseError === 'no-token' ? (
+            <p className="text-ink/75">
+              Персональный код доступен, если открыть сайт по вашей пригласительной ссылке или отправить анкету с главной
+              страницы.
+            </p>
+          ) : (
+            <p className="text-ink/75">Не удалось загрузить код. Попробуйте обновить страницу позже.</p>
+          )}
+        </div>
         <button
           type="button"
           className="mt-6 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
           onClick={onClose}
         >
-          Ок
+          Закрыть
         </button>
       </div>
     </div>
   )
 }
 
-const HEART_GOAL = 8
-
 type EggHeartGameSectionProps = {
-  inviteToken?: string | null
+  onHeartScoreChange?: (score: number) => void
 }
 
-export function EggHeartGameSection({ inviteToken }: EggHeartGameSectionProps) {
+export function EggHeartGameSection({ onHeartScoreChange }: EggHeartGameSectionProps) {
   const [score, setScore] = useState(0)
   const [pos, setPos] = useState(() => ({
     x: 20 + Math.random() * 60,
     y: 20 + Math.random() * 60,
   }))
-  const [phrase, setPhrase] = useState<string | null>(null)
-  const [phraseError, setPhraseError] = useState<'no-token' | 'fetch' | null>(null)
-  const [loadingPhrase, setLoadingPhrase] = useState(false)
-  const prizeFetched = useRef(false)
 
-  const won = score >= HEART_GOAL
+  const won = score >= HEART_JUMP_GOAL
+
+  useEffect(() => {
+    onHeartScoreChange?.(score)
+  }, [score, onHeartScoreChange])
 
   useEffect(() => {
     if (won) return
     setPos({ x: 12 + Math.random() * 76, y: 12 + Math.random() * 76 })
   }, [score, won])
 
-  useEffect(() => {
-    if (!won || prizeFetched.current) return
-    prizeFetched.current = true
-    if (!inviteToken?.trim()) {
-      setPhraseError('no-token')
-      return
-    }
-    setLoadingPhrase(true)
-    fetch(apiUrl(`/api/egg/prize/${encodeURIComponent(inviteToken.trim())}`))
-      .then(async (r) => {
-        if (!r.ok) throw new Error('bad')
-        const j = (await r.json()) as { phrase?: string }
-        if (j.phrase) setPhrase(j.phrase)
-        else throw new Error('bad')
-      })
-      .catch(() => {
-        setPhraseError('fetch')
-      })
-      .finally(() => {
-        setLoadingPhrase(false)
-      })
-  }, [won, inviteToken])
-
   const hit = () => {
     if (won) return
-    setScore((s) => Math.min(s + 1, HEART_GOAL))
+    setScore((s) => Math.min(s + 1, HEART_JUMP_GOAL))
   }
 
   return (
@@ -174,10 +220,7 @@ export function EggHeartGameSection({ inviteToken }: EggHeartGameSectionProps) {
         <h2 className="mt-3 font-display text-xl text-champagne sm:text-2xl">
           Охота на сердца
         </h2>
-        <p className="mt-3 text-sm text-ink/75">
-          Успейте нажать на сердечко, пока оно не прыгнуло. Нужно поймать{' '}
-          <span className="font-medium text-ink">{HEART_GOAL}</span> раз.
-        </p>
+        <p className="mt-3 text-sm text-ink/75">Успейте нажать на сердечко, пока оно не прыгнуло.</p>
       </div>
 
       <div className="relative mx-auto mt-6 h-[min(55vh,420px)] w-full max-w-md overflow-hidden rounded-2xl border border-ink/10 bg-sand/30 shadow-inner">
@@ -197,38 +240,11 @@ export function EggHeartGameSection({ inviteToken }: EggHeartGameSectionProps) {
             </svg>
           </button>
         ) : null}
-        <div className="pointer-events-none absolute left-3 top-3 z-[1] rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-ink/80 shadow-sm">
-          {won ? 'Готово!' : `${score} / ${HEART_GOAL}`}
+        <div className="pointer-events-none absolute left-3 top-3 z-[1] rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-ink/80 shadow-sm tabular-nums">
+          {won ? `${HEART_JUMP_GOAL} / ${HEART_TOTAL}` : `${score} / ${HEART_TOTAL}`}
         </div>
       </div>
 
-      {won ? (
-        <div className="mx-auto mt-6 max-w-md rounded-2xl border border-sage/30 bg-white/70 p-5 text-center backdrop-blur-sm">
-          {loadingPhrase ? (
-            <p className="text-sm text-ink/65">Загружаем ваш персональный код…</p>
-          ) : phrase ? (
-            <>
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink/45">
-                Ваш секретный код
-              </p>
-              <p className="mt-3 break-all font-mono text-lg font-semibold tracking-tight text-moss sm:text-xl">
-                {phrase}
-              </p>
-              <p className="mt-3 text-xs text-ink/60">
-                Сохраните его — по этому коду мы сможем выдать приз именно вам.
-              </p>
-            </>
-          ) : phraseError === 'no-token' ? (
-            <p className="text-sm text-ink/75">
-              Персональный код доступен, если открыть сайт по вашей пригласительной ссылке.
-            </p>
-          ) : (
-            <p className="text-sm text-ink/75">
-              Не удалось загрузить код. Попробуйте обновить страницу позже.
-            </p>
-          )}
-        </div>
-      ) : null}
     </section>
   )
 }

@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import { DatabaseSync } from 'node:sqlite'
 
-/** Совместимость с прежним API пакета `sqlite`: async-обёртка над синхронным `node:sqlite`. */
 export type SqliteAsync = {
   exec: (sql: string) => Promise<void>
   all: <T>(sql: string, ...params: unknown[]) => Promise<T[]>

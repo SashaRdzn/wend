@@ -10,9 +10,6 @@ function clientIp(req: express.Request): string {
   return req.socket.remoteAddress ?? 'unknown'
 }
 
-/**
- * Лог каждого ответа: метод, путь, статус, длительность, IP (учёт Render / proxy).
- */
 export function requestLogMiddleware(
   req: express.Request,
   res: express.Response,

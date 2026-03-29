@@ -11,8 +11,9 @@ import { OpeningHero } from './OpeningHero'
 import {
   EggFirstModal,
   EggHeartGameSection,
-  EggThirdPlaceholderModal,
+  EggPersistentModal,
   EggWatermelonModal,
+  HEART_JUMP_GOAL,
 } from './EasterEgg'
 import { WeddingCalendar } from './WeddingCalendar'
 import {
@@ -213,14 +214,15 @@ export type WeddingLandingProps = {
   guestName?: string | null
   showOpenInviteLink?: boolean
   rsvpSlot?: ReactNode
-  /** Токен из ссылки-приглашения — для персональной фразы после мини-игры */
   inviteToken?: string | null
+  rsvpAnswered?: boolean
 }
 
 export function WeddingLanding({
   guestName,
   rsvpSlot,
   inviteToken,
+  rsvpAnswered,
 }: WeddingLandingProps) {
   const countdown = useCountdown(WEDDING_DATE)
   const scheduleWrapRef = useRef<HTMLDivElement | null>(null)
@@ -249,16 +251,24 @@ export function WeddingLanding({
   const [dressCodeInView, setDressCodeInView] = useState(false)
   const [dressGalleryExpanded, setDressGalleryExpanded] = useState(false)
   const [eggFirstOpen, setEggFirstOpen] = useState(false)
-  /** Закрыли первую модалку (календарь) — можно показать «арбуз» в футере */
   const [eggFirstDone, setEggFirstDone] = useState(false)
   const [eggWatermelonOpen, setEggWatermelonOpen] = useState(false)
-  /** Закрыли модалку с арбузом — показываем строку в герое */
   const [eggWatermelonDone, setEggWatermelonDone] = useState(false)
   const [eggThirdOpen, setEggThirdOpen] = useState(false)
-  /** Закрыли третью модалку — открываем мини-игру */
   const [eggThirdDone, setEggThirdDone] = useState(false)
 
-  const eggGameUnlocked = eggFirstDone && eggWatermelonDone && eggThirdDone
+  const [heartGameScore, setHeartGameScore] = useState(0)
+
+  const [openSiteRsvpDone, setOpenSiteRsvpDone] = useState(() => {
+    try {
+      return !!sessionStorage.getItem('wend-open-rsvp-token')
+    } catch {
+      return false
+    }
+  })
+
+  const rsvpQuestUnlocked =
+    rsvpAnswered !== undefined ? rsvpAnswered : openSiteRsvpDone
 
   const [openSiteInviteToken, setOpenSiteInviteToken] = useState<string | null>(() => {
     try {
@@ -271,9 +281,12 @@ export function WeddingLanding({
   useEffect(() => {
     const sync = () => {
       try {
-        setOpenSiteInviteToken(sessionStorage.getItem('wend-open-rsvp-token'))
+        const t = sessionStorage.getItem('wend-open-rsvp-token')
+        setOpenSiteInviteToken(t)
+        setOpenSiteRsvpDone(!!t)
       } catch {
         setOpenSiteInviteToken(null)
+        setOpenSiteRsvpDone(false)
       }
     }
     window.addEventListener('wend-open-rsvp-saved', sync)
@@ -295,8 +308,6 @@ export function WeddingLanding({
     const io = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return
-        // Любая видимая часть секции: для длинной галереи intersectionRatio относится ко
-        // всей высоте секции и часто < 0.14 — иначе анимация никогда не включалась бы.
         setDressCodeInView(true)
         io.disconnect()
       },
@@ -382,7 +393,6 @@ export function WeddingLanding({
         const tRaw = (viewportCenterY - rect.top - geom.padY) / geom.innerH
         const tClamped = clamp(tRaw, 0, 1)
 
-        // Snap to the nearest stop when close.
         let best = geom.stopTs[0]
         let bestDist = Math.abs(tClamped - best)
         for (let i = 1; i < geom.stopTs.length; i++) {
@@ -414,13 +424,10 @@ export function WeddingLanding({
     }
   }, [])
 
-  // const openLinkClass =
-  //   'whitespace-nowrap text-xs font-medium text-ink/55 transition-colors hover:text-ink'
-
   return (
     <>
       <OpeningHero
-        showTopEggLine={eggWatermelonDone}
+        showTopEggLine={rsvpQuestUnlocked && eggWatermelonDone}
         onTopEggLineClick={() => setEggThirdOpen(true)}
       />
       <div id="main" className="relative bg-cream text-ink">
@@ -597,7 +604,12 @@ export function WeddingLanding({
             className="mt-10 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] border-t border-ink/10 pt-10 sm:mt-12 sm:pt-12 lg:mt-14"
           >
             <div className="mx-auto max-w-3xl px-1 text-center sm:px-4">
-              <WeddingCalendar onWeddingDayHeartClick={() => setEggFirstOpen(true)} />
+              <WeddingCalendar
+                weddingHeartInteractive={
+                  rsvpQuestUnlocked && heartGameScore >= HEART_JUMP_GOAL
+                }
+                onWeddingDayHeartClick={() => setEggFirstOpen(true)}
+              />
             </div>
           </section>
 
@@ -703,11 +715,6 @@ export function WeddingLanding({
                     </span>
 
                     <div className="absolute inset-0 z-10">
-                      {/*
-                        Блоки времени стоят по “змейке”, но их нужно ограничить внутри
-                        границ экрана/контейнера, иначе на узких ширинах они могут
-                        торчать за края или цеплять выпуклости SVG-линии.
-                      */}
                       {(() => {
                         const safeMargin = Math.max(10, scheduleGeom.w * 0.04)
                         const availableW = Math.max(0, scheduleGeom.w - safeMargin * 2)
@@ -719,12 +726,8 @@ export function WeddingLanding({
                             {DAY_PROGRAM.map((item, i) => {
                               const p = scheduleGeom.stopPoints[i]
                               const pointIsLeft = i % 2 === 0
-                              // Ставим текст по "внутренней" стороне змейки:
-                              // для левой точки — справа, для правой — слева.
                               const placeOnLeft = !pointIsLeft
 
-                              // Якорим блок на стороне линии и затем зажимаем,
-                              // чтобы весь блок гарантированно помещался в контейнер.
                               const anchorX = (p?.x ?? 0) + (placeOnLeft ? -inset : inset)
                               const left = placeOnLeft
                                 ? clamp(anchorX, safeMargin + blockW, scheduleGeom.w - safeMargin)
@@ -1006,12 +1009,12 @@ export function WeddingLanding({
             )}
           </section>
 
-          {eggGameUnlocked ? (
-            <EggHeartGameSection inviteToken={eggInviteToken} />
+          {rsvpQuestUnlocked && !eggFirstOpen && !eggFirstDone ? (
+            <EggHeartGameSection onHeartScoreChange={setHeartGameScore} />
           ) : null}
 
           <footer className="mt-14 border-t border-ink/10 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 text-center sm:mt-16 sm:pt-10">
-            {eggFirstDone && !eggWatermelonDone ? (
+            {rsvpQuestUnlocked && eggFirstDone && !eggWatermelonDone ? (
               <button
                 type="button"
                 onClick={() => setEggWatermelonOpen(true)}
@@ -1019,7 +1022,7 @@ export function WeddingLanding({
               >
                 арбуз
               </button>
-            ) : eggGameUnlocked ? (
+            ) : rsvpQuestUnlocked && eggThirdDone ? (
               <p className="text-[9px] text-ink/35 sm:text-[10px]">С любовью</p>
             ) : null}
           </footer>
@@ -1040,12 +1043,14 @@ export function WeddingLanding({
           setEggWatermelonDone(true)
         }}
       />
-      <EggThirdPlaceholderModal
+      <EggPersistentModal
         open={eggThirdOpen}
         onClose={() => {
           setEggThirdOpen(false)
           setEggThirdDone(true)
         }}
+        inviteToken={eggInviteToken}
+        prizeEligible={heartGameScore >= HEART_JUMP_GOAL && eggFirstDone}
       />
     </>
   )

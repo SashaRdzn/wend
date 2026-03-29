@@ -32,21 +32,24 @@ const HEART_PALE_PINK = '#f5c6d6'
 function HeartWithDay({
   day,
   onHeartClick,
+  interactive,
 }: {
   day: number
   onHeartClick?: () => void
+  interactive: boolean
 }) {
   return (
     <button
       type="button"
-      className="calendar-heart relative z-20 flex h-[3.25rem] w-[3.25rem] shrink-0 cursor-pointer touch-manipulation items-center justify-center border-0 bg-transparent p-0 sm:h-16 sm:w-16"
-      onClick={onHeartClick}
+      disabled={!interactive}
+      className={`calendar-heart relative z-20 flex h-[3.25rem] w-[3.25rem] shrink-0 touch-manipulation items-center justify-center border-0 bg-transparent p-0 sm:h-16 sm:w-16 ${
+        interactive
+          ? 'cursor-pointer transition hover:opacity-95 active:scale-[0.98]'
+          : 'cursor-not-allowed opacity-[0.72]'
+      }`}
+      onClick={interactive ? onHeartClick : undefined}
       aria-label={`День свадьбы ${day}`}
     >
-      {/*
-        Важно: сердце в absolute не задаёт размер кнопки — без min размера кликабельна
-        только узкая область цифры, клики по розовому сердцу не срабатывали.
-      */}
       <svg
         className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-12 w-12 -translate-x-1/2 -translate-y-1/2 sm:h-[3.75rem] sm:w-[3.75rem]"
         viewBox="0 0 24 24"
@@ -65,8 +68,10 @@ function HeartWithDay({
 
 export function WeddingCalendar({
   onWeddingDayHeartClick,
+  weddingHeartInteractive = false,
 }: {
   onWeddingDayHeartClick?: () => void
+  weddingHeartInteractive?: boolean
 } = {}) {
   const y = WEDDING_DATE.getFullYear()
   const monthIndex = WEDDING_DATE.getMonth()
@@ -100,7 +105,11 @@ export function WeddingCalendar({
             }`}
           >
             {day === null ? null : day === weddingDay ? (
-              <HeartWithDay day={day} onHeartClick={onWeddingDayHeartClick} />
+              <HeartWithDay
+                day={day}
+                interactive={weddingHeartInteractive}
+                onHeartClick={onWeddingDayHeartClick}
+              />
             ) : (
               <span className="tabular-nums text-ink/55">{day}</span>
             )}

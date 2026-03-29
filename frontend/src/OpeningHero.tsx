@@ -9,7 +9,6 @@ function formatHeroDate(d: Date) {
 }
 
 export type OpeningHeroProps = {
-  /** После второй модалки (арбуз): показать строку над датой */
   showTopEggLine?: boolean
   onTopEggLineClick?: () => void
 }

@@ -1,8 +1,3 @@
-/**
- * Логи в stdout в JSON — в Render удобно фильтровать и читать в Dashboard → Logs.
- * Формат: одна строка = один объект { ts, level, msg, ... }.
- */
-
 export type LogLevel = 'info' | 'warn' | 'error'
 
 function out(level: LogLevel, msg: string, meta?: Record<string, unknown>) {
@@ -29,7 +24,6 @@ export const logger = {
   error: (msg: string, meta?: Record<string, unknown>) => out('error', msg, meta),
 }
 
-/** Для логов: не светить токен целиком */
 export function redactAuthHeader(raw: string | undefined): string | undefined {
   if (!raw) return undefined
   if (raw.startsWith('Bearer ') && raw.length > 15) {

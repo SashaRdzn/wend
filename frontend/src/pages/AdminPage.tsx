@@ -43,7 +43,6 @@ function parseAlcoholPrefs(v: unknown): AlcoholKey[] {
       const p = JSON.parse(v) as unknown
       if (Array.isArray(p)) arr = p
     } catch {
-      /* ignore */
     }
   }
   const allowed = new Set<string>(ALCOHOL_KEYS)
@@ -109,7 +108,6 @@ function writeGuestCache(authToken: string, list: Guest[]) {
     sessionStorage.setItem(GUESTS_CACHE_TOKEN, authToken)
     sessionStorage.setItem(GUESTS_CACHE_JSON, JSON.stringify(list))
   } catch {
-    /* quota / private mode */
   }
 }
 
@@ -118,7 +116,6 @@ function clearGuestCache() {
     sessionStorage.removeItem(GUESTS_CACHE_TOKEN)
     sessionStorage.removeItem(GUESTS_CACHE_JSON)
   } catch {
-    /* ignore */
   }
 }
 
@@ -163,7 +160,6 @@ export function AdminPage() {
         setCopiedEggId((cur) => (cur === g.id ? null : cur))
       }, 2000)
     } catch {
-      /* */
     }
   }
 
@@ -175,7 +171,6 @@ export function AdminPage() {
         setCopiedId((cur) => (cur === g.id ? null : cur))
       }, 2000)
     } catch {
-      /* нет доступа к буферу */
     }
   }
 
@@ -249,7 +244,6 @@ export function AdminPage() {
           writeGuestCache(token, list)
         }
       } catch {
-        /* сеть / сервер недоступны */
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -286,7 +280,6 @@ export function AdminPage() {
       setGuests(list)
       writeGuestCache(token, list)
     } catch {
-      /* оставляем список как был */
     }
   }
 

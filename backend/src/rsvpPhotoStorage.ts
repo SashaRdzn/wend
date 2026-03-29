@@ -48,7 +48,6 @@ export async function removeGuestPhotoDir(token: string): Promise<void> {
   try {
     await fs.rm(guestPhotoDir(token), { recursive: true, force: true })
   } catch {
-    /* */
   }
 }
 
@@ -56,7 +55,6 @@ export async function unlinkIfExists(absPath: string): Promise<void> {
   try {
     await fs.unlink(absPath)
   } catch {
-    /* */
   }
 }
 
@@ -80,10 +78,6 @@ export type RsvpPhotoFileMap = {
   together?: Express.Multer.File
 }
 
-/**
- * Обновляет файлы на диске и возвращает имена файлов для колонок БД.
- * При status === declined каталог гостя удаляется.
- */
 export async function resolveRsvpPhotoColumns(
   token: string,
   status: string,

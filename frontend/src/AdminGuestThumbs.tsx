@@ -74,7 +74,6 @@ function AdminGuestPhotoBlob({
         blobUrl = URL.createObjectURL(b)
         setSrc(blobUrl)
       } catch {
-        /* */
       }
     })()
     return () => {
@@ -131,7 +130,6 @@ export function AdminGuestThumbs(props: {
         }
       }
     } catch {
-      /* браузер мог заблокировать несколько скачиваний */
     } finally {
       setDownloading(false)
     }

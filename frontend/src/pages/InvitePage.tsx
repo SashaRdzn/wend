@@ -47,7 +47,6 @@ function writeInviteGuest(t: string, g: Guest) {
   try {
     sessionStorage.setItem(inviteStorageKey(t), JSON.stringify(g))
   } catch {
-    /* quota */
   }
 }
 
@@ -105,7 +104,6 @@ export function InvitePage() {
         setComment(typeof data.comment === 'string' ? data.comment : '')
         setAlcohol(new Set(parseAlcoholPreferences(data.alcoholPreferences)))
       } catch {
-        /* сеть / сервер недоступны */
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -413,6 +411,9 @@ export function InvitePage() {
       >
         Отправить ответ
       </button>
+      <p className="text-center text-[10px] leading-relaxed text-ink/45 sm:text-[11px]">
+        После отправки на сайте появится кое-что ещё.
+      </p>
     </form>
   )
 
@@ -422,6 +423,7 @@ export function InvitePage() {
       showOpenInviteLink
       rsvpSlot={rsvpSlot}
       inviteToken={token}
+      rsvpAnswered={guest.hasResponded === true}
     />
   )
 }

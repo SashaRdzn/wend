@@ -40,10 +40,6 @@ function formDefaults() {
   }
 }
 
-/**
- * Анкета RSVP для главной страницы (без персональной ссылки).
- * Сохраняет ответ через POST /api/rsvp/open и дальше — как у приглашения по токену.
- */
 export function OpenRsvpForm() {
   const [guestName, setGuestName] = useState('')
   const [status, setStatus] = useState<'accepted' | 'declined' | 'pending'>(formDefaults().status)
@@ -63,7 +59,6 @@ export function OpenRsvpForm() {
       try {
         t = sessionStorage.getItem(OPEN_RSVP_TOKEN_KEY)
       } catch {
-        /* */
       }
       if (!t) {
         if (!cancelled) setLoading(false)
@@ -84,7 +79,6 @@ export function OpenRsvpForm() {
         try {
           sessionStorage.removeItem(OPEN_RSVP_TOKEN_KEY)
         } catch {
-          /* */
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -157,7 +151,6 @@ export function OpenRsvpForm() {
       try {
         sessionStorage.setItem(OPEN_RSVP_TOKEN_KEY, data.token)
       } catch {
-        /* */
       }
       setGuest(data.guest)
       setPhotos(emptyRsvpPhotos())
@@ -429,6 +422,9 @@ export function OpenRsvpForm() {
       >
         Отправить ответ
       </button>
+      <p className="text-center text-[10px] leading-relaxed text-ink/45 sm:text-[11px]">
+        После отправки на сайте появится кое-что ещё.
+      </p>
     </form>
   )
 }

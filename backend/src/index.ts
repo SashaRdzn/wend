@@ -25,7 +25,6 @@ const SQLITE_FILE = process.env.SQLITE_PATH
   : path.join(__dirname, '..', 'wedding.sqlite')
 
 const app = express()
-/** На Render за прокси — корректный req.ip / X-Forwarded-For */
 app.set('trust proxy', 1)
 
 const PORT = Number(process.env.PORT) || 4000
@@ -135,7 +134,6 @@ function parsePlusOneFromBody(body: Record<string, unknown>): boolean {
   return v === true || v === 'true' || v === '1' || v === 1
 }
 
-/** Vercel и др.: браузер шлёт Origin — либо список из CORS_ORIGIN, либо «отразить» Origin (true). */
 const corsOptions: CorsOptions = {
   origin: (() => {
     const raw = process.env.CORS_ORIGIN?.trim()
@@ -253,7 +251,6 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true })
 })
 
-/** См. GET /api/egg/prize/:token — та же формула, для сверки в админке. */
 function eggPrizePhraseForToken(token: string): string {
   const secret = process.env.EGG_PRIZE_SECRET || 'wend-egg-dev-secret-change-in-prod'
   const h = crypto.createHmac('sha256', secret).update(token).digest()
@@ -498,7 +495,6 @@ app.get('/api/admin/guest-photo/:token/:kind', authMiddleware, async (req, res) 
   }
 })
 
-/** Публичная анкета с главной страницы (без персональной ссылки). */
 app.post('/api/rsvp/open', rsvpUploadMiddleware, async (req, res) => {
   const body = req.body as Record<string, unknown>
   const name = typeof body.name === 'string' ? body.name.trim() : ''
@@ -662,7 +658,6 @@ app.post('/api/rsvp/:token', rsvpUploadMiddleware, async (req, res) => {
   }
 })
 
-/** Фронт на Vercel — на Render только API. SPA с этого же процесса: SERVE_SPA=1 и собранный frontend/dist. */
 const frontendDist = path.join(__dirname, '../../frontend/dist')
 const serveSpa =
   (process.env.SERVE_SPA === '1' || process.env.SERVE_SPA === 'true') &&

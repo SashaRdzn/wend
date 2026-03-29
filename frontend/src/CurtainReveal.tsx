@@ -12,10 +12,6 @@ function readSeen(): boolean {
   }
 }
 
-/**
- * Дети всегда в одном и том же месте дерева — не даём React перемонтировать Routes
- * при снятии оверлея (раньше из‑за смены ветки после ~2.5s ловили белый экран).
- */
 export function CurtainReveal({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [overlayGone, setOverlayGone] = useState(readSeen)
@@ -30,7 +26,6 @@ export function CurtainReveal({ children }: { children: React.ReactNode }) {
       try {
         sessionStorage.setItem(SEEN_KEY, '1')
       } catch {
-        /* private mode */
       }
     }, DURATION_MS + 100)
     return () => {

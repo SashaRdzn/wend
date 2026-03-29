@@ -236,7 +236,6 @@ body {
   }
 }
 
-/* Узкий экран ~375px: обратный отсчёт в одну строку */
 @media (max-width: 375px) {
   .flip-cube-cell {
     min-width: 1.2rem;
@@ -324,5 +323,4 @@ body {
 
 .calendar-heart {
   animation: calendarHeartPulse 2.2s ease-in-out infinite;
-  /* не pointer-events: none — иначе клики по сердцу в календаре не доходят до кнопки */
 }
