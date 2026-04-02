@@ -1,16 +1,12 @@
 import fs from 'fs/promises'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import type { Express } from 'express'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+import { resolveRsvpUploadRoot } from './persistPaths'
 
 export type RsvpPhotoSlot = 'self' | 'plusOne' | 'together'
 
 export function rsvpPhotoUploadRoot(): string {
-  return process.env.RSVP_UPLOAD_DIR?.trim()
-    ? path.resolve(process.env.RSVP_UPLOAD_DIR)
-    : path.join(__dirname, '..', 'data', 'rsvp-photos')
+  return resolveRsvpUploadRoot()
 }
 
 export function extFromMime(mime: string): string {

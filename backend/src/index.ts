@@ -9,6 +9,7 @@ import { logger } from './logger'
 import { requestLogMiddleware } from './httpLog'
 import { config as loadEnv } from 'dotenv'
 import { openSqliteDatabase, type SqliteAsync } from './sqliteDb'
+import { resolveSqliteFile } from './persistPaths'
 import {
   absolutePhotoPath,
   removeGuestPhotoDir,
@@ -20,9 +21,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 loadEnv({ path: path.join(__dirname, '../.env') })
 
-const SQLITE_FILE = process.env.SQLITE_PATH
-  ? path.resolve(process.env.SQLITE_PATH)
-  : path.join(__dirname, '..', 'wedding.sqlite')
+const SQLITE_FILE = resolveSqliteFile()
 
 const app = express()
 app.set('trust proxy', 1)
@@ -706,6 +705,7 @@ async function main() {
       node: process.version,
       env: process.env.NODE_ENV ?? 'development',
       sqlite: path.basename(SQLITE_FILE),
+      dataDir: process.env.DATA_DIR ?? undefined,
       spa: serveSpa,
     })
   })
