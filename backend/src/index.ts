@@ -705,7 +705,8 @@ async function main() {
       node: process.version,
       env: process.env.NODE_ENV ?? 'development',
       sqlite: path.basename(SQLITE_FILE),
-      dataDir: process.env.DATA_DIR ?? undefined,
+      sqlitePath: SQLITE_FILE,
+      dataDir: process.env.DATA_DIR || undefined,
       spa: serveSpa,
     })
   })
