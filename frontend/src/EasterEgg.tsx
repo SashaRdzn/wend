@@ -28,7 +28,7 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
           />
         </div>
         <p className="mt-2 text-center text-[9px] leading-snug text-ink/50 sm:text-[10px]">
-          Я думая, стоит посмотреть внизу страницы)
+          Я думаю, стоит посмотреть внизу страницы)
         </p>
         <button
           type="button"

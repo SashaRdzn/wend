@@ -772,9 +772,9 @@ export function WeddingLanding({
                 Как одеться
               </h2>
               <p className="mt-4 text-[15px] leading-relaxed text-ink/75 sm:text-[16px] sm:leading-relaxed">
-                Для нас главное — ваше присутствие! Но мы будем рады, если в своих нарядах вы
-                поддержите цветовую гамму и общую стилистику свадьбы: натуральные оттенки, мягкий
-                блеск атласа или шёлка, без ярких неоновых акцентов.
+                Мы хотим создать особенную атмосферу на нашем торжестве, поэтому просим учесть дресс-код при выборе наряда. <br />
+                Для дам предпочтительнее : длинные и коктейльные платья. <br />
+                Для джентльменов допускается к дресс коду: белый цвет рубашки/поло и классические брюки в черном цвете
               </p>
             </div>
 
@@ -810,7 +810,6 @@ export function WeddingLanding({
                 ))}
               </div>
             </div>
-
             <div className="mx-auto mt-10 max-w-3xl sm:mt-12">
               <p
                 className="dress-code-reveal-target text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-ink/55 sm:text-[12px]"
