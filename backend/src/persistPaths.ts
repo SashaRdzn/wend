@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// DATA_DIR: persistent volume root (e.g. Render disk mounted at /var/data).
 const DATA_DIR = process.env.DATA_DIR?.trim()
 
 export function resolveSqliteFile(): string {
