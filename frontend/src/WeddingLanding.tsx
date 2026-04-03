@@ -562,27 +562,37 @@ export function WeddingLanding({
                     <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage shadow-[0_0_8px_rgba(163,177,138,0.65)]" />
                     <div>
                       <p className="text-xs font-medium text-moss">
-                        2019 · Первая встреча
+                        2023 · Первая встреча
                       </p>
-                      <p>Кофейня, случайный плейлист и разговор до закрытия.</p>
+                      <p> История, с которой всё началось в Инстаграмме.</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
                     <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
                     <div>
                       <p className="text-xs font-medium text-moss">
-                        2021 · Путешествия
+                        2024 · Любовь без границ
                       </p>
-                      <p>Горы, море и понимание, что мы — команда.</p>
+                      <p>Первое совместное путешествие  в Тайланде
+                          Знакомство с родителями жениха.</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
                     <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
                     <div>
                       <p className="text-xs font-medium text-moss">
-                        2025 · Предложение
+                        2025 · Расширяя круг любви
                       </p>
-                      <p>Балкон, огни города и &quot;да&quot;.</p>
+                      <p>Знакомство с родителями невесты.</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sage/70" />
+                    <div>
+                      <p className="text-xs font-medium text-moss">
+                        2026 ·  Там, где сказали «да»
+                      </p>
+                      <p> Предложение на острове в Таиланде.</p>
                     </div>
                   </li>
                 </ul>
