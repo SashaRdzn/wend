@@ -28,7 +28,7 @@ app.set('trust proxy', 1)
 
 const PORT = Number(process.env.PORT) || 4000
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1')
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin_na_vaibe'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'huinya-parol'
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 const sessions = new Map<string, { expiresAt: number }>()
