@@ -11,6 +11,6 @@ export const VENUE_ADDRESS_LINES = [
 
 export const TWO_GIS_DIRECTIONS_URL = `https://2gis.kg/bishkek/directions/points/%7C${VENUE_LON}%2C${VENUE_LAT}`
 
-export const WEDDING_TELEGRAM_CHAT_URL = 'https://t.me/ruelii'
+export const WEDDING_TELEGRAM_CHAT_URL = 'https://t.me/+BiPFxhrG5EMzZTAy'
 
 export const WEDDING_HOST_EUGENE_CONTACT_URL = 'https://wa.me/996555961096'

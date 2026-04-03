@@ -83,8 +83,8 @@ const DRESS_CODE_PALETTE: {
   label: string
 }[] = [
   { fabric: dressFabric12, color: '#57352C', label: 'Шоколад' },
-  { fabric: dressFabric13, color: '#9a867c', label: 'Тайп' },
-  { fabric: dressFabric15, color: '#6A7452', label: 'Мята' }, 
+  { fabric: dressFabric13, color: '#6A5246', label: 'Какао' },
+  { fabric: dressFabric15, color: '#6A7452', label: 'Хвойная зелень' }, 
   { fabric: dressFabric14, color: '#A19C1F', label: 'Олива' },
   { fabric: dressFabric16, color: '#EFE69C', label: 'Лимон' },
 ]
@@ -169,34 +169,34 @@ const DAY_PROGRAM: DayProgramItem[] = [
     text: 'живые эмоции и первые кадры нашего дня.',
   },
   {
-    time: '15:00-15:30',
+    time: '15:00-15:40',
     title: 'Сбор гостей | Welcome Drinks',
-    text: 'Champagne • Bites • Photo Moments (Сбор гостей | Welcome Drinks Champagne, лёгкие закуски и photo moments) ',
+    text: 'Champagne • Фуршет • Photo Moments',
   },
   {
     time: '15:40-16:00',
-    title: 'Выход пары',
-    text: 'Жених и невеста',
+    title: 'Выход пары. Жених и невеста',
+    text: 'Фотосессия с парой',
   },
   {
-    time: '16:00',
+    time: '16:00-16:30',
     title: 'Церемония',
     text: 'Торжественная часть.',
   },
   {
-    time: '17:50-18:00',
-    title: 'Слайд-шоу и первый танец',
-    text: 'Слайд-шоу и первый танец.',
+    time: '16:30-18:00',
+    title: 'Интерактив',
+    text: 'Первый танец',
   },
   {
     time: '20:00-20:20',
-    title: 'Танец и торт',
-    text: 'Танец и торт ',
+    title: 'Торт',
+    text: 'Букет невесты',
   },
   {
     time: '20:50-21:30',
-    title: 'Танцевальный марафон',
-    text: 'Дискотека и марафон.',
+    title: 'Танцевальный вечер',
+    text: 'Дискотека',
   },
 ]
 
