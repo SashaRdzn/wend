@@ -244,11 +244,6 @@ export function OpenRsvpForm() {
       className="space-y-4 rounded-2xl border border-ink/12 bg-white/70 p-4 text-[11px] text-ink/75 backdrop-blur-lg sm:rounded-3xl sm:p-6 sm:text-xs"
       onSubmit={handleSubmit}
     >
-      <p className="text-[11px] leading-relaxed text-ink/55 sm:text-xs">
-        Вы на общей странице приглашения. Заполните анкету — ответ попадёт к организаторам так же, как
-        по персональной ссылке.
-      </p>
-
       <div>
         <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-ink/50">
           Ваше имя

@@ -17,7 +17,7 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
     >
       <div className="max-h-[min(90vh,540px)] w-full max-w-md overflow-y-auto rounded-2xl border border-ink/10 bg-cream p-5 shadow-2xl sm:p-6">
         <p id="egg-first-title" className="text-center text-sm font-medium leading-snug text-ink sm:text-base">
-          Упс, похоже, вы попали на первую пасхалку
+          Упс, похоже, вы попали...
         </p>
         <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-ink/10">
           <img

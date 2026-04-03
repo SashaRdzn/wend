@@ -945,7 +945,7 @@ export function WeddingLanding({
             <h2 className="font-display text-xl text-champagne sm:text-2xl lg:text-3xl">
               Подтвердите участие
             </h2>
-                <p className=' text-x font-display'> Пожалуйста запоните анкету ниже и подтвердите свое присутствие до 01.05.2026 чтобы мы могли спланировать наше торжество наилучшим образом</p>
+                <p className=' text-xs'> Пожалуйста запоните анкету ниже и подтвердите свое присутствие до 01.05.2026 чтобы мы могли спланировать наше торжество наилучшим образом</p>
             {rsvpSlot ?? (
               <form
                 className="grid gap-3 rounded-2xl border border-ink/12 bg-white/70 p-4 text-[11px] text-ink/75 backdrop-blur-lg sm:grid-cols-2 sm:gap-4 sm:rounded-3xl sm:p-6 sm:text-xs"
