@@ -28,7 +28,7 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
           />
         </div>
         <p className="mt-2 text-center text-[9px] leading-snug text-ink/50 sm:text-[10px]">
-          Чтобы идти дальше, пролистайте страницу вниз — там продолжение квеста.
+          Я думая, стоит посмотреть внизу страницы)
         </p>
         <button
           type="button"
@@ -69,7 +69,8 @@ export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
           />
         </div>
         <p className="mt-2 text-center text-[9px] leading-snug text-ink/50 sm:text-[10px]">
-          Загляните в верх страницы — там следующая зацепка.
+          Попались? <br/>
+          Ну тогда посмотрите что там вверху страницы)
         </p>
         <button
           type="button"
