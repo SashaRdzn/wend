@@ -19,6 +19,9 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
         <p id="egg-first-title" className="text-center text-sm font-medium leading-snug text-ink sm:text-base">
           Упс, похоже, вы попали на первую пасхалку
         </p>
+        <p className="mt-3 text-center text-xs leading-relaxed text-ink/70 sm:text-sm">
+          Чтобы идти дальше, пролистайте страницу вниз — там продолжение квеста.
+        </p>
         <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-ink/10">
           <img
             src="/egg-fry-meme.png"
@@ -56,6 +59,9 @@ export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
       <div className="max-h-[min(92vh,560px)] w-full max-w-md overflow-y-auto rounded-2xl border border-ink/10 bg-cream p-5 shadow-2xl sm:p-6">
         <p id="egg-melon-title" className="text-center text-base font-medium text-ink sm:text-lg">
           а чего вы ожидали)))
+        </p>
+        <p className="mt-3 text-center text-xs leading-relaxed text-ink/70 sm:text-sm">
+          Загляните в верх страницы — там следующая зацепка.
         </p>
         <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-ink/10">
           <img

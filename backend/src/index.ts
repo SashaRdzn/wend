@@ -33,7 +33,15 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 const sessions = new Map<string, { expiresAt: number }>()
 
-const ALCOHOL_KEYS = ['beer', 'liquor', 'wine', 'champagne', 'vodka'] as const
+const ALCOHOL_KEYS = [
+  'beer',
+  'liquor',
+  'wine',
+  'champagne',
+  'vodka',
+  'whiskey',
+  'cocktails',
+] as const
 type AlcoholKey = (typeof ALCOHOL_KEYS)[number]
 
 function normalizeAlcoholPreferences(input: unknown): string | null {
@@ -188,6 +196,9 @@ async function initDb(): Promise<SqliteAsync> {
     if (!cols.some((c) => c.name === 'rsvpPhotoTogether')) {
       await db.exec('ALTER TABLE guests ADD COLUMN rsvpPhotoTogether TEXT')
     }
+    if (!cols.some((c) => c.name === 'eggPrizeClaimedAt')) {
+      await db.exec('ALTER TABLE guests ADD COLUMN eggPrizeClaimedAt TEXT')
+    }
     dbMigrated = true
   }
   return db
@@ -294,7 +305,7 @@ app.get('/api/guests', authMiddleware, async (_req, res) => {
   try {
     const db = await initDb()
     const guests = await db.all(
-      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences, rsvpSource, rsvpPhotoSelf, rsvpPhotoPlusOne, rsvpPhotoTogether FROM guests ORDER BY createdAt ASC',
+      'SELECT id, name, token, status, plusOne, comment, alcoholPreferences, rsvpSource, rsvpPhotoSelf, rsvpPhotoPlusOne, rsvpPhotoTogether, eggPrizeClaimedAt FROM guests ORDER BY createdAt ASC',
     )
     res.json(
       guests.map((g) => {
@@ -310,6 +321,7 @@ app.get('/api/guests', authMiddleware, async (_req, res) => {
           alcoholPreferences: parseAlcoholJson(g.alcoholPreferences as string | null),
           rsvpSource: (g as { rsvpSource?: string | null }).rsvpSource ?? null,
           eggPhrase: eggPrizePhraseForToken(token),
+          eggPrizeClaimedAt: (g as { eggPrizeClaimedAt?: string | null }).eggPrizeClaimedAt ?? null,
           photos: {
             self: !!gp.rsvpPhotoSelf,
             plusOne: !!gp.rsvpPhotoPlusOne,
@@ -407,11 +419,18 @@ app.delete('/api/guests/:id', authMiddleware, async (req, res) => {
 app.get('/api/egg/prize/:token', async (req, res) => {
   try {
     const db = await initDb()
-    const row = await db.get<{ id: number }>('SELECT id FROM guests WHERE token = ?', req.params.token)
+    const token = req.params.token
+    const row = await db.get<{ id: number }>('SELECT id FROM guests WHERE token = ?', token)
     if (!row) {
       return res.status(404).json({ error: 'Guest not found' })
     }
-    const phrase = eggPrizePhraseForToken(req.params.token)
+    const now = new Date().toISOString()
+    await db.run(
+      'UPDATE guests SET eggPrizeClaimedAt = ? WHERE token = ? AND eggPrizeClaimedAt IS NULL',
+      now,
+      token,
+    )
+    const phrase = eggPrizePhraseForToken(token)
     res.json({ phrase })
   } catch (e) {
     logger.error('api_egg_prize_failed', {

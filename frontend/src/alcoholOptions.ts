@@ -1,4 +1,12 @@
-export const ALCOHOL_KEYS = ['beer', 'liquor', 'wine', 'champagne', 'vodka'] as const
+export const ALCOHOL_KEYS = [
+  'beer',
+  'liquor',
+  'wine',
+  'champagne',
+  'vodka',
+  'whiskey',
+  'cocktails',
+] as const
 
 export type AlcoholKey = (typeof ALCOHOL_KEYS)[number]
 
@@ -8,6 +16,8 @@ export const ALCOHOL_LABELS: Record<AlcoholKey, string> = {
   wine: 'Вино',
   champagne: 'Шампанское',
   vodka: 'Водка',
+  whiskey: 'Виски',
+  cocktails: 'Коктейли',
 }
 
 export function parseAlcoholPreferences(raw: unknown): AlcoholKey[] {

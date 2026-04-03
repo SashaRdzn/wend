@@ -14,6 +14,8 @@ const ANALYTICS_BAR: Record<AlcoholKey, string> = {
   wine: 'from-rose-300 to-rose-500/85',
   champagne: 'from-yellow-200 to-amber-400/90',
   vodka: 'from-sky-200 to-sky-500/80',
+  whiskey: 'from-orange-400 to-amber-800/88',
+  cocktails: 'from-fuchsia-300 to-pink-500/80',
 }
 
 type Guest = {
@@ -26,7 +28,21 @@ type Guest = {
   alcoholPreferences: AlcoholKey[] | null
   rsvpSource: 'invite' | 'open'
   eggPhrase: string
+  eggPrizeClaimedAt: string | null
   photos: { self: boolean; plusOne: boolean; together: boolean }
+}
+
+function formatEggClaimedAt(iso: string | null | undefined): string | null {
+  if (!iso || typeof iso !== 'string') return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 function formatGuestAlcohol(p: AlcoholKey[] | null | undefined) {
@@ -67,6 +83,7 @@ function parseGuest(raw: unknown): Guest | null {
   const rsvpSource: Guest['rsvpSource'] =
     src === 'open' ? 'open' : 'invite'
   const eggPhrase = typeof o.eggPhrase === 'string' ? o.eggPhrase : ''
+  const eggPrizeClaimedAt = typeof o.eggPrizeClaimedAt === 'string' ? o.eggPrizeClaimedAt : null
   const ph = o.photos
   const photos =
     ph && typeof ph === 'object'
@@ -86,6 +103,7 @@ function parseGuest(raw: unknown): Guest | null {
     alcoholPreferences: prefs.length ? prefs : null,
     rsvpSource,
     eggPhrase,
+    eggPrizeClaimedAt,
     photos,
   }
 }
@@ -331,6 +349,15 @@ export function AdminPage() {
     return { total, counts, withAny, pctOfAll }
   }, [guests])
 
+  const eggAnalytics = useMemo(() => {
+    const withClaim = guests.filter((g) => g.eggPrizeClaimedAt)
+    const withoutClaim = guests.length - withClaim.length
+    const top3 = [...withClaim]
+      .sort((a, b) => (a.eggPrizeClaimedAt ?? '').localeCompare(b.eggPrizeClaimedAt ?? ''))
+      .slice(0, 3)
+    return { withClaim: withClaim.length, withoutClaim, top3 }
+  }, [guests])
+
   const authBearer = token ? `Bearer ${token}` : ''
 
   if (!token) {
@@ -423,6 +450,94 @@ export function AdminPage() {
         </section>
 
         <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
+          <h2 className="mb-2 text-xs font-semibold text-champagne sm:mb-3 sm:text-sm">
+            Пасхалка — кто получил код
+          </h2>
+          <p className="mb-4 max-w-2xl text-[10px] leading-relaxed text-ink/45 sm:text-[11px]">
+            Персональный код появляется после прохождения квеста на сайте. Время фиксируется в момент первой
+            успешной загрузки кода (сервер сохраняет дату и время один раз на гостя).
+          </p>
+          <div className="mb-5 flex flex-wrap gap-x-6 gap-y-2 text-[11px] sm:text-xs">
+            <div>
+              <span className="text-ink/45">Получили код: </span>
+              <span className="font-semibold tabular-nums text-emerald-800/90">{eggAnalytics.withClaim}</span>
+            </div>
+            <div>
+              <span className="text-ink/45">Ещё не получали: </span>
+              <span className="font-semibold tabular-nums text-ink/70">{eggAnalytics.withoutClaim}</span>
+            </div>
+          </div>
+          {eggAnalytics.top3.length > 0 ? (
+            <div>
+              <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-ink/40">
+                Подиум — трое первых по времени получения кода
+              </p>
+              <div className="flex items-end justify-center gap-2 sm:gap-5">
+                {(
+                  [
+                    {
+                      place: 2,
+                      guestIdx: 1,
+                      height: 'h-[104px] sm:h-[118px]',
+                      grad: 'from-slate-200 via-slate-300 to-slate-400/95',
+                    },
+                    {
+                      place: 1,
+                      guestIdx: 0,
+                      height: 'h-[148px] sm:h-[172px]',
+                      grad: 'from-amber-100 via-amber-300 to-amber-500/90',
+                    },
+                    {
+                      place: 3,
+                      guestIdx: 2,
+                      height: 'h-[88px] sm:h-[100px]',
+                      grad: 'from-orange-100 via-orange-300 to-orange-600/88',
+                    },
+                  ] as const
+                ).map(({ place, guestIdx, height, grad }) => {
+                  const g = eggAnalytics.top3[guestIdx]
+                  return (
+                    <div
+                      key={place}
+                      className="flex w-[30%] max-w-[168px] flex-col items-center sm:w-[26%]"
+                    >
+                      <div
+                        className={`w-full rounded-t-xl bg-gradient-to-b ${grad} shadow-md ${height}`}
+                        aria-hidden
+                      />
+                      <div className="w-full rounded-b-xl border border-t-0 border-ink/10 bg-cream px-2 py-2.5 text-center shadow-sm">
+                        <div className="text-lg leading-none" aria-hidden>
+                          {place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉'}
+                        </div>
+                        {g ? (
+                          <>
+                            <p className="mt-1 text-[11px] font-semibold leading-snug text-champagne">
+                              {g.name}
+                            </p>
+                            <p className="mt-1 text-[9px] leading-snug text-ink/55">
+                              {formatEggClaimedAt(g.eggPrizeClaimedAt)}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="mt-1 text-[10px] text-ink/35">—</p>
+                        )}
+                        <p className="mt-1.5 text-[9px] uppercase tracking-wider text-ink/35">
+                          {place} место
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <p className="text-[11px] text-ink/45">
+              Пока никто не получил код на сайте — здесь появится подиум первых трёх гостей.
+            </p>
+          )}
+        </section>
+
+        <section className="mb-6 rounded-2xl border border-ink/10 bg-white/65 p-3 sm:mb-8 sm:rounded-3xl sm:p-4">
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-xs font-semibold text-champagne sm:text-sm">
                 Напитки — аналитика
@@ -494,8 +609,8 @@ export function AdminPage() {
             Список гостей
           </h2>
           <p className="mb-3 max-w-2xl text-[10px] leading-relaxed text-ink/45 sm:mb-4 sm:text-[11px]">
-            Колонка «Пасхалка» — персональный код после мини-игры на сайте. Совпадает с тем, что
-            видит гость у себя; можно сверить, если человек прислал фразу для приза.
+            «Получил код» — гость дошёл до финала и код был загружен с сайта (см. время). «Персональный код» —
+            тот же код, что видит гость; можно сверить, если прислал фразу для приза.
           </p>
           {loading ? (
             <p className="text-ink/50">Загрузка…</p>
@@ -525,6 +640,20 @@ export function AdminPage() {
                       {g.status === 'accepted' ? 'Придёт' : g.status === 'declined' ? 'Не придёт' : 'Не ответил'}
                       {g.plusOne && ' · +1'}
                     </div>
+                    <p className="mt-2 text-[11px] leading-snug">
+                      {g.eggPrizeClaimedAt ? (
+                        <>
+                          <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-900/90">
+                            Код получен
+                          </span>
+                          <span className="mt-1 block text-ink/60">{formatEggClaimedAt(g.eggPrizeClaimedAt)}</span>
+                        </>
+                      ) : (
+                        <span className="rounded-md bg-ink/5 px-1.5 py-0.5 text-[10px] text-ink/55">
+                          Код ещё не получен
+                        </span>
+                      )}
+                    </p>
                     <a
                       href={`/invite/${g.token}`}
                       className="mt-2 block break-all text-sage underline underline-offset-2"
@@ -542,7 +671,7 @@ export function AdminPage() {
                     </button>
                     {g.eggPhrase ? (
                       <div className="mt-3 rounded-lg border border-ink/10 bg-white/60 px-2 py-2">
-                        <p className="text-[9px] uppercase tracking-wider text-ink/40">Пасхалка</p>
+                        <p className="text-[9px] uppercase tracking-wider text-ink/40">Персональный код</p>
                         <p className="mt-1 break-all font-mono text-[11px] text-moss">{g.eggPhrase}</p>
                         <button
                           type="button"
@@ -585,12 +714,13 @@ export function AdminPage() {
                 ))}
               </div>
               <div className="hidden overflow-x-auto sm:block">
-                <table className="min-w-[1040px] border-separate border-spacing-y-1 text-left">
+                <table className="min-w-[1180px] border-separate border-spacing-y-1 text-left">
                   <thead className="text-[11px] uppercase tracking-[0.16em] text-ink/45">
                     <tr>
                       <th className="px-3 py-1">Имя</th>
                       <th className="px-3 py-1">Откуда</th>
-                      <th className="min-w-[200px] px-3 py-1">Пасхалка</th>
+                      <th className="min-w-[132px] px-3 py-1">Код получён</th>
+                      <th className="min-w-[200px] px-3 py-1">Персональный код</th>
                       <th className="px-3 py-1">Статус</th>
                       <th className="px-3 py-1">+1</th>
                       <th className="px-3 py-1">Напитки</th>
@@ -611,6 +741,22 @@ export function AdminPage() {
                         <td className="px-3 py-2 text-sm text-champagne">{g.name}</td>
                         <td className="px-3 py-2 text-[11px] text-ink/60">
                           {g.rsvpSource === 'open' ? 'Главная' : 'Админка'}
+                        </td>
+                        <td className="max-w-[160px] px-3 py-2 align-top text-[11px]">
+                          {g.eggPrizeClaimedAt ? (
+                            <div>
+                              <span className="inline-block rounded-md bg-emerald-500/12 px-1.5 py-0.5 text-[10px] font-medium text-emerald-900/85">
+                                Да
+                              </span>
+                              <p className="mt-1.5 leading-snug text-ink/60">
+                                {formatEggClaimedAt(g.eggPrizeClaimedAt)}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="inline-block rounded-md bg-ink/[0.06] px-1.5 py-0.5 text-[10px] text-ink/50">
+                              Нет
+                            </span>
+                          )}
                         </td>
                         <td className="max-w-[240px] px-3 py-2 align-top">
                           {g.eggPhrase ? (
