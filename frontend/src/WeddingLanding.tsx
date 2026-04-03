@@ -436,13 +436,6 @@ export function WeddingLanding({
 
         <div className="relative mx-auto flex max-w-6xl flex-col px-3 pb-16 pt-[max(2.5rem,env(safe-area-inset-top))] sm:px-6 lg:px-8 lg:pt-14">
           <header className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-ink/10 bg-white/55 px-3 py-1.5 text-[10px] tracking-[0.14em] uppercase text-ink/65 backdrop-blur sm:px-4 sm:py-1 sm:text-xs sm:tracking-[0.18em]">
-              <span className="truncate">
-                {guestName ? (
-                  <span className="text-ink/75"> · {guestName}</span>
-                ) : null}
-              </span>
-            </div>
           </header>
 
           <main className="mt-6 flex flex-col gap-10 scroll-mt-[max(5.5rem,env(safe-area-inset-top))] sm:mt-8 sm:gap-16 lg:mt-10">
@@ -455,13 +448,11 @@ export function WeddingLanding({
                   <p className="text-xs uppercase tracking-[0.28em] text-sage sm:text-sm sm:tracking-[0.32em]">
                     приглашение на свадьбу
                   </p>
-                  <h1 className="font-display text-3xl leading-tight text-champagne sm:text-5xl lg:text-6xl">
-                    Владимир <span className="text-sage">&</span> Елизавета
-                  </h1>
                   <p className="text-sm text-ink/75 sm:text-base">
                     {guestName ? (
                       <>
-                        Уважаемый(ая) {guestName}, мы рады пригласить вас на наше главное событие —
+                        <span className="font-display text-sage text-2xl">Дорогой(ая) {guestName} </span><br></br>
+                        Мы рады пригласить вас на наше главное событие —
                         уютную камерную свадьбу в кругу самых близких. На этом сайте вы найдёте все
                         детали дня, помощь с дорогой и сможете ответить на приглашение в блоке ниже, на сайте размещены пасхалки — скрытые элементы/задания. Найдите их и заберите свой приз на празднике!
                       </>
