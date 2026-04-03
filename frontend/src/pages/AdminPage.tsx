@@ -18,6 +18,22 @@ const ANALYTICS_BAR: Record<AlcoholKey, string> = {
   cocktails: 'from-fuchsia-300 to-pink-500/80',
 }
 
+function inviteNounRu(n: number): string {
+  const n10 = n % 10
+  const n100 = n % 100
+  if (n10 === 1 && n100 !== 11) return 'приглашение'
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return 'приглашения'
+  return 'приглашений'
+}
+
+function companionNounRu(n: number): string {
+  const n10 = n % 10
+  const n100 = n % 100
+  if (n10 === 1 && n100 !== 11) return 'спутник'
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return 'спутника'
+  return 'спутников'
+}
+
 type Guest = {
   id: number
   name: string
@@ -330,7 +346,9 @@ export function AdminPage() {
     }
   }
 
-  const accepted = guests.filter((g) => g.status === 'accepted').length
+  const acceptedGuests = guests.filter((g) => g.status === 'accepted')
+  const acceptedInvites = acceptedGuests.length
+  const acceptedPersons = acceptedGuests.reduce((n, g) => n + 1 + (g.plusOne ? 1 : 0), 0)
   const declined = guests.filter((g) => g.status === 'declined').length
 
   const alcoholAnalytics = useMemo(() => {
@@ -435,9 +453,16 @@ export function AdminPage() {
             <div className="text-[11px] uppercase tracking-[0.22em] text-ink/45">
               Придут
             </div>
-            <div className="mt-1 text-lg font-semibold text-emerald-800/90">
-              {accepted}
+            <div className="mt-1 text-lg font-semibold tabular-nums text-emerald-800/90">
+              {acceptedPersons}
+              <span className="ml-1 text-xs font-normal text-ink/45">чел.</span>
             </div>
+            {acceptedInvites > 0 && acceptedPersons !== acceptedInvites ? (
+              <p className="mt-1 max-w-[16rem] text-[10px] leading-snug text-ink/50">
+                {acceptedInvites} {inviteNounRu(acceptedInvites)} с ответом «приду» · +
+                {acceptedPersons - acceptedInvites} {companionNounRu(acceptedPersons - acceptedInvites)}
+              </p>
+            ) : null}
           </div>
           <div>
             <div className="text-[11px] uppercase tracking-[0.22em] text-ink/45">

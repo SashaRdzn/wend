@@ -19,9 +19,6 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
         <p id="egg-first-title" className="text-center text-sm font-medium leading-snug text-ink sm:text-base">
           Упс, похоже, вы попали на первую пасхалку
         </p>
-        <p className="mt-3 text-center text-xs leading-relaxed text-ink/70 sm:text-sm">
-          Чтобы идти дальше, пролистайте страницу вниз — там продолжение квеста.
-        </p>
         <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-ink/10">
           <img
             src="/egg-fry-meme.png"
@@ -30,9 +27,12 @@ export function EggFirstModal({ open, onClose }: EggFirstModalProps) {
             loading="eager"
           />
         </div>
+        <p className="mt-2 text-center text-[9px] leading-snug text-ink/50 sm:text-[10px]">
+          Чтобы идти дальше, пролистайте страницу вниз — там продолжение квеста.
+        </p>
         <button
           type="button"
-          className="mt-6 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
+          className="mt-5 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
           onClick={onClose}
         >
           Понятно
@@ -60,9 +60,6 @@ export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
         <p id="egg-melon-title" className="text-center text-base font-medium text-ink sm:text-lg">
           а чего вы ожидали)))
         </p>
-        <p className="mt-3 text-center text-xs leading-relaxed text-ink/70 sm:text-sm">
-          Загляните в верх страницы — там следующая зацепка.
-        </p>
         <div className="mt-4 overflow-hidden rounded-xl ring-1 ring-ink/10">
           <img
             src="/egg-watermelon.png"
@@ -71,9 +68,12 @@ export function EggWatermelonModal({ open, onClose }: EggWatermelonModalProps) {
             loading="eager"
           />
         </div>
+        <p className="mt-2 text-center text-[9px] leading-snug text-ink/50 sm:text-[10px]">
+          Загляните в верх страницы — там следующая зацепка.
+        </p>
         <button
           type="button"
-          className="mt-6 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
+          className="mt-5 w-full rounded-full border border-ink/10 bg-white/70 py-3 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.99]"
           onClick={onClose}
         >
           Закрыть
