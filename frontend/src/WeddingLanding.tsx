@@ -451,7 +451,7 @@ export function WeddingLanding({
                   <p className="text-sm text-ink/75 sm:text-base">
                     {guestName ? (
                       <>
-                        <span className="font-display text-sage text-2xl">Дорогой(ая) {guestName} </span><br></br>
+                        <span className="font-display text-sage text-2xl">Дорогой(ая) {guestName} </span><br></br><br />
                         Мы рады пригласить вас на наше главное событие —
                         уютную камерную свадьбу в кругу самых близких. На этом сайте вы найдёте все
                         детали дня, помощь с дорогой и сможете ответить на приглашение в блоке ниже, на сайте размещены пасхалки — скрытые элементы/задания. Найдите их и заберите свой приз на празднике!
