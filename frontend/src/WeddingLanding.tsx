@@ -165,11 +165,11 @@ type DayProgramItem = {
 const DAY_PROGRAM: DayProgramItem[] = [
   {
     time: '14:00-15:00',
-    title: 'Bride & Groom moments',
+    title: 'Bride & Groom fotomoments,',
     text: 'живые эмоции и первые кадры нашего дня.',
   },
   {
-    time: '15:00-15:40',
+    time: '15:00-15:20',
     title: 'Сбор гостей | Welcome Drinks',
     text: 'Champagne • Фуршет • Photo Moments',
   },
@@ -464,11 +464,6 @@ export function WeddingLanding({
                       </>
                     )}
                   </p>
-                  {guestName ? (
-                    <p className="text-xs text-ink/60">
-                      Эта персональная ссылка помогает нам учесть ваш ответ при подготовке праздника.
-                    </p>
-                  ) : null}
                 </div>
 
                 <div className="w-full min-w-0">
