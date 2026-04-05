@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   ALCOHOL_KEYS,
@@ -84,6 +84,13 @@ export function InvitePage() {
   )
   const [photos, setPhotos] = useState<RsvpPhotosFormState>(() => emptyRsvpPhotos())
   const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const submitErrorRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    if (!submitError) return
+    submitErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [submitError])
 
   useEffect(() => {
     if (!token) return
@@ -133,7 +140,7 @@ export function InvitePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError('')
-    if (!token) return
+    if (!token || submitting) return
     const alcoholPreferences = status === 'declined' ? [] : [...alcohol]
     const savedPhotos = guest?.photos ?? emptySavedPhotos
     const photoErr = validateRsvpPhotos(status, plusOne, photos, savedPhotos)
@@ -149,22 +156,32 @@ export function InvitePage() {
     fd.append('alcoholPreferences', JSON.stringify(alcoholPreferences))
     appendRsvpFiles(fd, status, plusOne, photos)
 
-    const res = await fetch(apiUrl(`/api/rsvp/${token}`), {
-      method: 'POST',
-      body: fd,
-    })
-    if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { error?: string }
-      setSubmitError(err.error || 'Не удалось сохранить')
-      return
-    }
+    setSubmitting(true)
     try {
-      const sync = await fetch(apiUrl(`/api/guests/by-token/${encodeURIComponent(token)}`))
-      if (sync.ok) {
-        const next = (await sync.json()) as Guest
-        setGuest(next)
-        writeInviteGuest(token, next)
-      } else {
+      const res = await fetch(apiUrl(`/api/rsvp/${token}`), {
+        method: 'POST',
+        body: fd,
+      })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string }
+        setSubmitError(err.error || 'Не удалось сохранить')
+        return
+      }
+      try {
+        const sync = await fetch(apiUrl(`/api/guests/by-token/${encodeURIComponent(token)}`))
+        if (sync.ok) {
+          const next = (await sync.json()) as Guest
+          setGuest(next)
+          writeInviteGuest(token, next)
+        } else {
+          setGuest((g) => {
+            if (!g) return g
+            const next = { ...g, hasResponded: true as const }
+            writeInviteGuest(token, next)
+            return next
+          })
+        }
+      } catch {
         setGuest((g) => {
           if (!g) return g
           const next = { ...g, hasResponded: true as const }
@@ -172,16 +189,13 @@ export function InvitePage() {
           return next
         })
       }
+      setPhotos(emptyRsvpPhotos())
+      setEditing(false)
     } catch {
-      setGuest((g) => {
-        if (!g) return g
-        const next = { ...g, hasResponded: true as const }
-        writeInviteGuest(token, next)
-        return next
-      })
+      setSubmitError('Не удалось отправить. Проверьте соединение и попробуйте снова.')
+    } finally {
+      setSubmitting(false)
     }
-    setPhotos(emptyRsvpPhotos())
-    setEditing(false)
   }
 
   const alcoholDisabled = status === 'declined'
@@ -247,6 +261,8 @@ export function InvitePage() {
   ) : (
     <form
       className="space-y-4 rounded-2xl border border-ink/12 bg-white/70 p-4 text-[11px] text-ink/75 backdrop-blur-lg sm:rounded-3xl sm:p-6 sm:text-xs"
+      noValidate
+      aria-busy={submitting}
       onSubmit={handleSubmit}
     >
       <div>
@@ -403,13 +419,18 @@ export function InvitePage() {
         />
       </div>
 
-      {submitError ? <p className="text-xs text-red-800/90">{submitError}</p> : null}
+      {submitError ? (
+        <p ref={submitErrorRef} className="text-xs text-red-800/90">
+          {submitError}
+        </p>
+      ) : null}
 
       <button
         type="submit"
-        className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-sage via-[#95a882] to-sand px-5 py-2.5 text-sm font-semibold text-moss shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98] sm:px-6"
+        disabled={submitting}
+        className="touch-manipulation inline-flex min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-sage via-[#95a882] to-sand px-5 py-2.5 text-sm font-semibold text-moss shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98] enabled:cursor-pointer disabled:opacity-70 sm:px-6"
       >
-        Отправить ответ
+        {submitting ? 'Отправка…' : 'Отправить ответ'}
       </button>
       <p className="text-center text-[10px] leading-relaxed text-ink/45 sm:text-[11px]">
         После отправки на сайте появится кое-что ещё.

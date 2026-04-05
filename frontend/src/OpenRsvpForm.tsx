@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ALCOHOL_KEYS,
   ALCOHOL_LABELS,
@@ -51,6 +51,13 @@ export function OpenRsvpForm() {
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const submitErrorRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    if (!submitError) return
+    submitErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [submitError])
 
   useEffect(() => {
     let cancelled = false
@@ -113,6 +120,7 @@ export function OpenRsvpForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitError('')
+    if (submitting) return
     const nameTrim = guestName.trim()
     if (!nameTrim) {
       setSubmitError('Укажите, как к вам обращаться')
@@ -137,56 +145,63 @@ export function OpenRsvpForm() {
       return fd
     }
 
-    if (!guest?.token) {
-      const res = await fetch(apiUrl('/api/rsvp/open'), {
+    setSubmitting(true)
+    try {
+      if (!guest?.token) {
+        const res = await fetch(apiUrl('/api/rsvp/open'), {
+          method: 'POST',
+          body: buildFd(),
+        })
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: string }
+          setSubmitError(err.error || 'Не удалось отправить')
+          return
+        }
+        const data = (await res.json()) as { token: string; guest: Guest }
+        try {
+          sessionStorage.setItem(OPEN_RSVP_TOKEN_KEY, data.token)
+        } catch {
+        }
+        setGuest(data.guest)
+        setPhotos(emptyRsvpPhotos())
+        setEditing(false)
+        window.dispatchEvent(new Event('wend-open-rsvp-saved'))
+        return
+      }
+
+      const fd = new FormData()
+      fd.append('status', status)
+      fd.append('plusOne', plusOne ? '1' : '0')
+      fd.append('comment', comment)
+      fd.append('alcoholPreferences', JSON.stringify(alcoholPreferences))
+      appendRsvpFiles(fd, status, plusOne, photos)
+
+      const res = await fetch(apiUrl(`/api/rsvp/${guest.token}`), {
         method: 'POST',
-        body: buildFd(),
+        body: fd,
       })
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string }
-        setSubmitError(err.error || 'Не удалось отправить')
+        setSubmitError(err.error || 'Не удалось сохранить')
         return
       }
-      const data = (await res.json()) as { token: string; guest: Guest }
       try {
-        sessionStorage.setItem(OPEN_RSVP_TOKEN_KEY, data.token)
+        const sync = await fetch(apiUrl(`/api/guests/by-token/${encodeURIComponent(guest.token)}`))
+        if (sync.ok) {
+          setGuest((await sync.json()) as Guest)
+        } else {
+          setGuest((g) => (g ? { ...g, hasResponded: true as const } : g))
+        }
       } catch {
-      }
-      setGuest(data.guest)
-      setPhotos(emptyRsvpPhotos())
-      setEditing(false)
-      window.dispatchEvent(new Event('wend-open-rsvp-saved'))
-      return
-    }
-
-    const fd = new FormData()
-    fd.append('status', status)
-    fd.append('plusOne', plusOne ? '1' : '0')
-    fd.append('comment', comment)
-    fd.append('alcoholPreferences', JSON.stringify(alcoholPreferences))
-    appendRsvpFiles(fd, status, plusOne, photos)
-
-    const res = await fetch(apiUrl(`/api/rsvp/${guest.token}`), {
-      method: 'POST',
-      body: fd,
-    })
-    if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { error?: string }
-      setSubmitError(err.error || 'Не удалось сохранить')
-      return
-    }
-    try {
-      const sync = await fetch(apiUrl(`/api/guests/by-token/${encodeURIComponent(guest.token)}`))
-      if (sync.ok) {
-        setGuest((await sync.json()) as Guest)
-      } else {
         setGuest((g) => (g ? { ...g, hasResponded: true as const } : g))
       }
+      setPhotos(emptyRsvpPhotos())
+      setEditing(false)
     } catch {
-      setGuest((g) => (g ? { ...g, hasResponded: true as const } : g))
+      setSubmitError('Не удалось отправить. Проверьте соединение и попробуйте снова.')
+    } finally {
+      setSubmitting(false)
     }
-    setPhotos(emptyRsvpPhotos())
-    setEditing(false)
   }
 
   if (loading) {
@@ -242,6 +257,8 @@ export function OpenRsvpForm() {
   return (
     <form
       className="space-y-4 rounded-2xl border border-ink/12 bg-white/70 p-4 text-[11px] text-ink/75 backdrop-blur-lg sm:rounded-3xl sm:p-6 sm:text-xs"
+      noValidate
+      aria-busy={submitting}
       onSubmit={handleSubmit}
     >
       <div>
@@ -249,7 +266,7 @@ export function OpenRsvpForm() {
           Ваше имя
         </label>
         <input
-          required
+          autoComplete="name"
           className="min-h-[44px] w-full rounded-xl border border-ink/12 bg-cream px-3 py-2.5 text-sm text-ink outline-none ring-0 transition focus:border-sage focus:bg-white"
           placeholder="Как к вам обращаться?"
           value={guestName}
@@ -409,13 +426,18 @@ export function OpenRsvpForm() {
         />
       </div>
 
-      {submitError ? <p className="text-xs text-red-800/90">{submitError}</p> : null}
+      {submitError ? (
+        <p ref={submitErrorRef} className="text-xs text-red-800/90">
+          {submitError}
+        </p>
+      ) : null}
 
       <button
         type="submit"
-        className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-sage via-[#95a882] to-sand px-5 py-2.5 text-sm font-semibold text-moss shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98] sm:px-6"
+        disabled={submitting}
+        className="touch-manipulation inline-flex min-h-[44px] items-center justify-center rounded-full bg-gradient-to-r from-sage via-[#95a882] to-sand px-5 py-2.5 text-sm font-semibold text-moss shadow-lg shadow-ink/10 transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98] enabled:cursor-pointer disabled:opacity-70 sm:px-6"
       >
-        Отправить ответ
+        {submitting ? 'Отправка…' : 'Отправить ответ'}
       </button>
       <p className="text-center text-[10px] leading-relaxed text-ink/45 sm:text-[11px]">
         После отправки на сайте появится кое-что ещё.
