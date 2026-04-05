@@ -9,6 +9,33 @@ export function rsvpPhotoUploadRoot(): string {
   return resolveRsvpUploadRoot()
 }
 
+/** Extension from file magic bytes — used when MIME is missing or application/octet-stream (common on Android). */
+export function imageExtFromBuffer(buf: Buffer): string | null {
+  if (!buf || buf.length < 12) return null
+  if (buf[0] === 0xff && buf[1] === 0xd8) return '.jpg'
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return '.png'
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return '.gif'
+  if (
+    buf.slice(0, 4).toString('ascii') === 'RIFF' &&
+    buf.slice(8, 12).toString('ascii') === 'WEBP'
+  ) {
+    return '.webp'
+  }
+  if (buf.slice(4, 8).toString('ascii') === 'ftyp') {
+    const brand = buf
+      .slice(8, 12)
+      .toString('ascii')
+      .toLowerCase()
+      .replace(/\0/g, '')
+    if (/^(heic|heix|hevc|hevx|mif1|msf1|heis|hevm)/.test(brand)) return '.heic'
+  }
+  return null
+}
+
+export function bufferLooksLikeImage(buf: Buffer): boolean {
+  return imageExtFromBuffer(buf) !== null
+}
+
 export function extFromMime(mime: string): string {
   const m = mime.toLowerCase()
   if (m === 'image/jpeg' || m === 'image/jpg') return '.jpg'
@@ -32,9 +59,16 @@ export async function writeRsvpPhoto(
   slot: RsvpPhotoSlot,
   file: Express.Multer.File,
 ): Promise<string> {
+  const guessed = imageExtFromBuffer(file.buffer)
+  if (!guessed) {
+    const err = new Error('invalid_image_buffer')
+    ;(err as NodeJS.ErrnoException).code = 'INVALID_IMAGE_BUFFER'
+    throw err
+  }
   const dir = guestPhotoDir(token)
   await fs.mkdir(dir, { recursive: true })
-  const ext = extFromMime(file.mimetype)
+  const fromMime = extFromMime(file.mimetype)
+  const ext = fromMime !== '.img' ? fromMime : guessed
   const name = `${slot}${ext}`
   await fs.writeFile(path.join(dir, name), file.buffer)
   return name
@@ -75,6 +109,24 @@ export type RsvpPhotoFileMap = {
 }
 
 export async function resolveRsvpPhotoColumns(
+  token: string,
+  status: string,
+  plusOne: boolean,
+  files: RsvpPhotoFileMap,
+  existing: RsvpPhotoCols,
+): Promise<{ ok: true; cols: RsvpPhotoCols } | { ok: false; message: string }> {
+  try {
+    return await resolveRsvpPhotoColumnsInner(token, status, plusOne, files, existing)
+  } catch (e) {
+    const code = e && typeof e === 'object' && 'code' in e ? (e as NodeJS.ErrnoException).code : undefined
+    if (code === 'INVALID_IMAGE_BUFFER') {
+      return { ok: false, message: 'Файл не распознан как изображение' }
+    }
+    throw e
+  }
+}
+
+async function resolveRsvpPhotoColumnsInner(
   token: string,
   status: string,
   plusOne: boolean,

@@ -83,11 +83,17 @@ const rsvpPhotoUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024, files: 3 },
   fileFilter: (_req, file, cb) => {
-    if (!/^image\//i.test(file.mimetype)) {
-      cb(new Error('not_image'))
+    const m = (file.mimetype || '').toLowerCase()
+    if (m.startsWith('image/')) {
+      cb(null, true)
       return
     }
-    cb(null, true)
+    // Android Chrome often sends gallery JPEG/PNG as octet-stream or empty MIME
+    if (m === '' || m === 'application/octet-stream' || m === 'binary/octet-stream') {
+      cb(null, true)
+      return
+    }
+    cb(new Error('not_image'))
   },
 }).fields([
   { name: 'photoSelf', maxCount: 1 },

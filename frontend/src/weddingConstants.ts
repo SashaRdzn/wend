@@ -9,7 +9,7 @@ export const VENUE_ADDRESS_LINES = [
   '3-я линия, 301/3',
 ] as const
 
-export const VENUE_ROUTE_COPY_LINE = VENUE_ADDRESS_LINES[2]
+export const VENUE_ROUTE_COPY_LINE = '3-я 301/3'
 
 export const TWO_GIS_DIRECTIONS_URL = `https://2gis.kg/bishkek/directions/points/%7C${VENUE_LON}%2C${VENUE_LAT}`
 
