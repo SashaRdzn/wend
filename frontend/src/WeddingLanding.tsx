@@ -21,6 +21,7 @@ import {
   VENUE_ADDRESS_LINES,
   VENUE_LAT,
   VENUE_LON,
+  VENUE_ROUTE_COPY_LINE,
   WEDDING_DATE,
   WEDDING_HOST_EUGENE_CONTACT_URL,
   WEDDING_TELEGRAM_CHAT_URL,
@@ -258,6 +259,7 @@ export function WeddingLanding({
   const [eggThirdDone, setEggThirdDone] = useState(false)
 
   const [heartGameScore, setHeartGameScore] = useState(0)
+  const [routeAddressCopied, setRouteAddressCopied] = useState(false)
 
   const [openSiteRsvpDone, setOpenSiteRsvpDone] = useState(() => {
     try {
@@ -643,19 +645,40 @@ export function WeddingLanding({
                 ))}
               </address>
             </div>
-            <a
-              href={TWO_GIS_DIRECTIONS_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-4 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:px-5"
-            >
-              <span>Построить маршрут</span>
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={TWO_GIS_DIRECTIONS_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-4 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:px-5"
+              >
+                <span>Построить маршрут</span>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(VENUE_ROUTE_COPY_LINE)
+                    setRouteAddressCopied(true)
+                    window.setTimeout(() => setRouteAddressCopied(false), 2000)
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-ink/10 bg-white/60 px-4 py-2.5 text-sm font-medium text-champagne transition hover:bg-sand/50 active:scale-[0.98] sm:px-5"
+              >
+                <span>{routeAddressCopied ? 'Скопировано' : 'Скопировать маршрут'}</span>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
+            </div>
           </section>
 
           <section
